@@ -1,0 +1,28 @@
+name: ach_dbt
+version: "1.0.0"
+config-version: 2
+
+profile: ach_dbt
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  ach_dbt:
+    # Staging is a thin, typed view over the raw Parquet -- no business logic,
+    # so re-reading the lake stays cheap and the lineage graph stays honest.
+    staging:
+      +materialized: view
+      +schema: staging
+    # Intermediate joins and aggregates; tables so marts don't recompute them.
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    # Marts are what the detector, dashboards, and any BI tool read.
+    marts:
+      +materialized: table
+      +schema: marts

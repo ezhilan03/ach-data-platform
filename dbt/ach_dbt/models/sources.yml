@@ -1,0 +1,46 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw zone of the lake: Hive-partitioned Parquet written by the ingest DAG.
+      dbt-duckdb reads it in place via external_location -- nothing is copied
+      into the warehouse until the staging layer decides how to type it.
+    meta:
+      # {name} is substituted by dbt-duckdb with the table name below. The
+      # env var is rendered by dbt; ACH_LAKE_ROOT is set by compose / CI.
+      external_location: >-
+        read_parquet('{{ env_var("ACH_LAKE_ROOT", "../../data/lake") }}/raw/{name}/*/*.parquet',
+                     hive_partitioning = true, union_by_name = true)
+    tables:
+      - name: ach_entries
+        description: One row per ACH entry detail record, partitioned by effective entry date (dt).
+        columns:
+          - name: entry_id
+            data_tests: [not_null, unique]
+          - name: trace_number
+            data_tests: [not_null]
+          - name: company_id
+            data_tests: [not_null]
+      - name: ach_files
+        description: One row per originator file per day (two on a duplicate-submission day).
+        columns:
+          - name: file_id
+            data_tests: [not_null, unique]
+      - name: ach_returns
+        description: Return entries, partitioned by the date the return arrived (dt).
+        columns:
+          - name: return_id
+            data_tests: [not_null, unique]
+          - name: return_code
+            data_tests:
+              - accepted_values:
+                  values: ["R01", "R02", "R03", "R04", "R05", "R07", "R08", "R09", "R10", "R11", "R16", "R20", "R29"]
+      - name: originators
+        description: Static originator dimension (synthetic).
+        config:
+          external_location: >-
+            read_parquet('{{ env_var("ACH_LAKE_ROOT", "../../data/lake") }}/raw/originators/originators.parquet')
+        columns:
+          - name: company_id
+            data_tests: [not_null, unique]

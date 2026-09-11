@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets / local env
+.env
+
+# Generated data -- everything under data/ is reproducible from the seed.
+data/lake/**
+data/warehouse/**
+data/ground_truth/**
+data/runs/**
+!data/**/.gitkeep
+
+# dbt artifacts
+dbt/ach_dbt/target/
+dbt/ach_dbt/dbt_packages/
+dbt/ach_dbt/logs/
+
+# Airflow runtime
+airflow/logs/**
+!airflow/logs/.gitkeep
+airflow/config/airflow.cfg
+airflow/config/simple_auth_manager_passwords.json.generated
+airflow/plugins/**
+!airflow/plugins/.gitkeep
+
+# Eval outputs are committed on purpose (eval/results/latest.json) -- the
+# measured numbers are part of the portfolio claim. Only scratch runs ignored.
+eval/results/run_*.json
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+infra/terraform/.terraform.lock.hcl
+infra/terraform/*.tfvars
+
+# OS
+.DS_Store

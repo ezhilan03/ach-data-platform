@@ -1,0 +1,216 @@
+# Local platform: Airflow 3.3 (LocalExecutor) + Prometheus/Grafana monitoring.
+#
+# Derived from the official Airflow 3.3.1 compose file, with the Celery stack
+# removed. LocalExecutor rather than CeleryExecutor because this runs on one
+# laptop: Celery would add Redis, a worker and Flower to demonstrate a
+# distributed execution model that isn't actually distributed here. The
+# executor is one env var, and swapping it back is the documented next step.
+#
+# Removed vs. the upstream file: redis, airflow-worker, flower, airflow-cli,
+# and the triggerer (no deferrable operators in these DAGs).
+# Added: statsd-exporter, prometheus, pushgateway, grafana.
+
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: ach-data-platform:local
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-apiserver:8080/execution/"
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-local-dev-jwt-secret}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    # Airflow 3's default auth manager. Password is generated on first start
+    # and written to the passwords file below -- `make airflow-password`.
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/config/simple_auth_manager_passwords.json.generated
+    # --- metrics -----------------------------------------------------------
+    # DogStatsD wire format so dag_id/task_id arrive as *tags*; statsd_exporter
+    # parses those into Prometheus labels automatically. Without this, Airflow
+    # bakes the ids into the metric name and you get one time series per task.
+    AIRFLOW__METRICS__STATSD_ON: "true"
+    AIRFLOW__METRICS__STATSD_HOST: statsd-exporter
+    AIRFLOW__METRICS__STATSD_PORT: "8125"
+    AIRFLOW__METRICS__STATSD_PREFIX: airflow
+    AIRFLOW__METRICS__STATSD_DATADOG_ENABLED: "true"
+    # --- platform ----------------------------------------------------------
+    ACH_LAKE_ROOT: /opt/airflow/data/lake
+    ACH_WAREHOUSE_PATH: /opt/airflow/data/warehouse/ach.duckdb
+    ACH_GROUND_TRUTH_DIR: /opt/airflow/data/ground_truth
+    ACH_RUNS_DIR: /opt/airflow/data/runs
+    ACH_SEED: ${ACH_SEED:-42}
+    ACH_HISTORY_DAYS: ${ACH_HISTORY_DAYS:-60}
+    ACH_HISTORY_END: ${ACH_HISTORY_END:-2026-08-31}
+    DBT_PROJECT_DIR: /opt/airflow/dbt/ach_dbt
+    DBT_BIN: /opt/dbt-venv/bin/dbt
+    PUSHGATEWAY_URL: http://pushgateway:9091
+    GRAFANA_URL: http://grafana:3000
+    GRAFANA_USER: ${GRAFANA_USER:-admin}
+    GRAFANA_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    TRIAGE_MODEL: ${TRIAGE_MODEL:-ollama_chat/qwen3:4b}
+    # Ollama runs on the host, not in the compose network.
+    OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+    ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/config:/opt/airflow/config
+    - ./dbt:/opt/airflow/dbt
+    - ./data:/opt/airflow/data
+  user: "${AIRFLOW_UID:-50000}:0"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  depends_on: &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+
+services:
+  # --- Airflow -------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /opt/airflow/{logs,dags,config} /opt/airflow/data/{lake,warehouse,ground_truth,runs}
+        # Runs as root so it can fix ownership of the bind mounts; every other
+        # service runs as AIRFLOW_UID and would otherwise fail to write logs.
+        chown -R "${AIRFLOW_UID:-50000}:0" /opt/airflow/{logs,config,data} /opt/airflow/dbt
+        /entrypoint airflow version
+        /entrypoint airflow config list >/dev/null
+        echo "init complete"
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: "true"
+    user: "0:0"
+    restart: on-failure
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  # --- Monitoring ----------------------------------------------------------
+  # Airflow speaks StatsD; Prometheus scrapes. This translates between them.
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.31.0
+    command:
+      - --statsd.mapping-config=/etc/statsd/mapping.yml
+      - --statsd.listen-udp=:8125
+      - --web.listen-address=:9102
+    volumes:
+      - ./monitoring/statsd/mapping.yml:/etc/statsd/mapping.yml:ro
+    ports:
+      - "9102:9102"
+    restart: always
+
+  # Airflow tasks are short-lived processes; Prometheus cannot scrape something
+  # that has already exited. Custom pipeline/data metrics are pushed here.
+  pushgateway:
+    image: prom/pushgateway:v1.11.3
+    ports:
+      - "9091:9091"
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - statsd-exporter
+      - pushgateway
+    restart: always
+
+  grafana:
+    image: grafana/grafana:13.2.1
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # The pipeline writes annotations through the HTTP API with basic auth.
+      GF_AUTH_BASIC_ENABLED: "true"
+      GF_FEATURE_TOGGLES_ENABLE: ""
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: always
+
+volumes:
+  postgres-db-volume:
+  prometheus-data:
+  grafana-data:

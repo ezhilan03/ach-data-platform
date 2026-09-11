@@ -1,0 +1,16 @@
+apiVersion: 1
+
+providers:
+  - name: ach-platform
+    orgId: 1
+    folder: ACH Platform
+    type: file
+    disableDeletion: false
+    # Dashboards are provisioned from files in the repo, not clicked together
+    # in the UI. A dashboard that only exists in Grafana's database is lost the
+    # first time someone recreates the container.
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

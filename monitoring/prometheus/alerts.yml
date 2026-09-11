@@ -1,0 +1,72 @@
+# Alerting rules. There is no Alertmanager in this stack -- these fire and are
+# visible in Prometheus and on the Grafana alert list, which is the honest
+# scope for a laptop deployment. They are here because the rules are the part
+# worth reviewing: they encode what "unhealthy" means for this platform, and
+# wiring them to PagerDuty later is configuration, not design.
+
+groups:
+  - name: pipeline-health
+    rules:
+      - alert: SchedulerHeartbeatMissing
+        expr: rate(airflow_scheduler_heartbeat[2m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Airflow scheduler is not heartbeating"
+          description: "No scheduler heartbeats for 5 minutes. Nothing is being scheduled."
+
+      - alert: DagImportErrors
+        expr: airflow_dag_processing_import_errors > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} DAG file(s) failing to import"
+          description: "A DAG file has a syntax or import error, so its schedule is silently not running."
+
+      - alert: TaskFailuresElevated
+        expr: sum(rate(airflow_ti_failures[15m])) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Airflow task failures in the last 15 minutes"
+
+  - name: data-health
+    rules:
+      - alert: RawValidationViolation
+        expr: max by (check) (ach_raw_validation_violations) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Raw contract violation: {{ $labels.check }}"
+          description: "The raw zone failed a hard validation check, so the day was not published to the warehouse."
+
+      - alert: DbtTestFailures
+        expr: sum(ach_dbt_nodes{resource_type="test", status=~"fail|error"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} dbt test(s) failing"
+          description: "A dbt test failed, which stops the marts from being declared fresh."
+
+      - alert: NachaUnauthorizedThresholdBreach
+        expr: ach_nacha_60d_breaches{threshold="unauthorized"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} originator(s) over the NACHA 0.5% unauthorized return-rate threshold"
+          description: "Rolling 60-day unauthorized return rate exceeds the network threshold. This is an ODFI inquiry risk, not just a data blip."
+
+      - alert: DetectorRecallRegressed
+        expr: ach_eval_detection{metric="recall", level="incident"} < 0.7
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Detector incident recall fell to {{ $value }}"
+          description: "The evaluation harness is finding fewer of the labeled incidents than the committed baseline. Something in the marts or the thresholds changed."

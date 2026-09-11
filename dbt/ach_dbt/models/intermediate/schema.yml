@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: int_entries_with_returns
+    description: Entry grain enriched with return outcome and duplicate-submission flag.
+    columns:
+      - name: entry_id
+        data_tests: [not_null, unique]
+      - name: is_returned
+        data_tests: [not_null]
+
+  - name: int_originator_daily
+    description: Originator x effective-date aggregates; the input to every mart and to the detector.
+    data_tests:
+      - unique_combination:
+          columns: [company_id, effective_entry_date]
+    columns:
+      - name: entry_count
+        data_tests: [not_null]

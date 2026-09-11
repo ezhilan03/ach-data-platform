@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "Quality floors enforced by CI (scripts/check_eval.py) on every pull request.",
+    "These are deliberately data, not code: ratcheting a floor up after a real",
+    "improvement is a one-line diff that shows in review, and loosening one to",
+    "make a build pass is equally visible. Set them below the current measured",
+    "numbers by enough margin that seed-level noise cannot flake the build, and",
+    "raise them when a change genuinely earns it.",
+    "",
+    "llm_triage_accuracy is absent on purpose: CI has no model, so the triage",
+    "step runs rules-only there. The LLM number is measured on the build",
+    "machine by `make eval` and reported in the README."
+  ],
+  "detection": {
+    "day_f1": 0.55,
+    "day_precision": 0.75,
+    "incident_recall": 0.7,
+    "cluster_precision": 0.6,
+    "max_mean_detection_delay_days": 2.0
+  },
+  "triage": {
+    "rules_accuracy": 0.6
+  }
+}

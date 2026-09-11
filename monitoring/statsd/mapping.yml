@@ -1,0 +1,91 @@
+# statsd_exporter mapping for Airflow 3.
+#
+# With AIRFLOW__METRICS__STATSD_DATADOG_ENABLED=true, Airflow emits DogStatsD
+# tags (`|#dag_id:x,task_id:y`) and statsd_exporter turns those into Prometheus
+# labels on its own -- no mapping rule needed for them. What the rules below
+# add is (a) histogram buckets for the timers we actually chart, because the
+# default summary type can't answer "what fraction of tasks finished under 30s"
+# across a time range, and (b) names for the handful of legacy dotted metrics
+# that still carry an id in the metric name.
+#
+# Timer values arrive in milliseconds. Buckets are in seconds because
+# statsd_exporter divides timer observations by 1000 for histograms, so keep
+# `ach_*_seconds` semantics consistent across the two dashboards.
+
+defaults:
+  observer_type: summary
+  timer_type: summary
+  match_type: glob
+  quantiles:
+    - quantile: 0.5
+      error: 0.01
+    - quantile: 0.9
+      error: 0.01
+    - quantile: 0.99
+      error: 0.001
+
+mappings:
+  # --- timers we chart as histograms ---------------------------------------
+  - match: "airflow.dagrun.duration.success"
+    name: "airflow_dagrun_duration_success_seconds"
+    observer_type: histogram
+    histogram_options:
+      buckets: [1, 5, 10, 30, 60, 120, 300, 600, 1800]
+
+  - match: "airflow.dagrun.duration.failed"
+    name: "airflow_dagrun_duration_failed_seconds"
+    observer_type: histogram
+    histogram_options:
+      buckets: [1, 5, 10, 30, 60, 120, 300, 600, 1800]
+
+  - match: "airflow.task.duration"
+    name: "airflow_task_duration_seconds"
+    observer_type: histogram
+    histogram_options:
+      buckets: [0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600]
+
+  - match: "airflow.task.queued_duration"
+    name: "airflow_task_queued_duration_seconds"
+    observer_type: histogram
+    histogram_options:
+      buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60, 300]
+
+  - match: "airflow.dagrun.schedule_delay"
+    name: "airflow_dagrun_schedule_delay_seconds"
+    observer_type: histogram
+    histogram_options:
+      buckets: [0.5, 1, 5, 10, 30, 60, 300]
+
+  # --- legacy dotted names that still embed an id --------------------------
+  # Emitted when the deployment has not fully moved to tagged metrics; keeping
+  # these means the dashboards work either way.
+  - match: "airflow.pool.open_slots.*"
+    name: "airflow_pool_open_slots"
+    labels:
+      pool: "$1"
+
+  - match: "airflow.pool.running_slots.*"
+    name: "airflow_pool_running_slots"
+    labels:
+      pool: "$1"
+
+  - match: "airflow.executor.running_tasks.*"
+    name: "airflow_executor_running_tasks"
+    labels:
+      executor: "$1"
+
+  - match: "airflow.executor.queued_tasks.*"
+    name: "airflow_executor_queued_tasks"
+    labels:
+      executor: "$1"
+
+  - match: "airflow.ti.finish.*.*.*"
+    name: "airflow_ti_finish"
+    labels:
+      dag_id: "$1"
+      task_id: "$2"
+      state: "$3"
+
+  # Everything else passes through with dots converted to underscores:
+  # airflow.scheduler_heartbeat -> airflow_scheduler_heartbeat,
+  # airflow.dagbag_size -> airflow_dagbag_size, and so on.

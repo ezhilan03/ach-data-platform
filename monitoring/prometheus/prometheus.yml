@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    platform: ach-data-platform
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # Airflow's own operational metrics, translated from StatsD.
+  - job_name: airflow
+    static_configs:
+      - targets: ["statsd-exporter:9102"]
+
+  # Pipeline and data-quality metrics pushed by short-lived tasks.
+  - job_name: pushgateway
+    # Keep the job/instance labels the pushing task set, rather than
+    # overwriting them with "pushgateway" -- otherwise every metric from
+    # every stage collapses onto one series.
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

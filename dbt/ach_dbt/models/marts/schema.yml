@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: fct_originator_daily
+    description: >
+      Originator x effective-date facts with return rates, duplicate ratio,
+      settlement lag, and a trailing-14-day baseline. Input to the anomaly
+      detector and the data-health dashboard.
+    data_tests:
+      - unique_combination:
+          columns: [company_id, effective_entry_date]
+    columns:
+      - name: company_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_originators')
+              field: company_id
+      - name: entry_count
+        data_tests: [not_null]
+      - name: unauthorized_return_rate
+        data_tests:
+          - rate_between_zero_and_one
+      - name: admin_return_rate
+        data_tests:
+          - rate_between_zero_and_one
+      - name: overall_return_rate
+        data_tests:
+          - rate_between_zero_and_one
+
+  - name: fct_return_rate_60d
+    description: NACHA-style rolling 60-day return rates and threshold breach flags per originator.
+    data_tests:
+      - unique_combination:
+          columns: [company_id, as_of_date]
+    columns:
+      - name: unauthorized_return_rate_60d
+        data_tests:
+          - rate_between_zero_and_one
+
+  - name: fct_settlement_daily
+    data_tests:
+      - unique_combination:
+          columns: [settlement_date, sec_code]
+
+  - name: fct_return_codes_daily
+    data_tests:
+      - unique_combination:
+          columns: [return_date, company_id, return_code]
+
+  - name: dim_originators
+    columns:
+      - name: company_id
+        data_tests: [not_null, unique]

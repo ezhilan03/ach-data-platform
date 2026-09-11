@@ -1,0 +1,113 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  # Required for keyless signing via the GitHub OIDC token.
+  id-token: write
+
+jobs:
+  publish:
+    name: Build, sign and publish the runtime image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tags: :sha-<commit> always, :latest on main, :vX.Y.Z on a version tag.
+      # The immutable sha tag is the one a deployment should ever pin to;
+      # :latest exists for humans pulling it to try locally.
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # linux/amd64 for cloud runtimes, linux/arm64 because the build
+          # machine is an M-series Mac and a single-arch image would be
+          # emulated (slowly) there.
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Keyless signing: the signature is bound to this workflow's OIDC
+      # identity, so "which commit and which workflow produced this image"
+      # is verifiable without anyone managing a private key.
+      - name: Sign the image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "ghcr.io/${{ github.repository }}@${DIGEST}"
+
+      - name: Summary
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### Published"
+            echo
+            echo '```'
+            echo "ghcr.io/${{ github.repository }}@${DIGEST}"
+            echo '```'
+            echo
+            echo "Tags:"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Deployment is deliberately manual, and this job says so out loud rather
+  # than pretending a laptop project has a production environment. The
+  # Terraform in infra/ provisions the registry and bucket that a Cloud Run
+  # deployment would target; wiring GCP Workload Identity Federation and a
+  # `gcloud run deploy` step is a documented next step, not a stub that looks
+  # like it works.
+  deploy-note:
+    name: Deployment target
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "### Deployment"
+            echo
+            echo "Image published to GHCR. No automatic deploy is wired:"
+            echo "see docs/adr/0006-terraform-over-kubernetes.md for the"
+            echo "Artifact Registry / GCS target and what remains to connect it."
+          } >> "$GITHUB_STEP_SUMMARY"

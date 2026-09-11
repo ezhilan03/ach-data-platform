@@ -1,0 +1,19 @@
+# Keep the build context small: data/ grows to hundreds of MB of Parquet and
+# none of it belongs in the image (it is regenerated from ACH_SEED).
+data/
+airflow/logs/
+airflow/config/
+dbt/ach_dbt/target/
+dbt/ach_dbt/logs/
+dbt/ach_dbt/dbt_packages/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.git/
+.github/
+infra/
+monitoring/
+docs/
+.env

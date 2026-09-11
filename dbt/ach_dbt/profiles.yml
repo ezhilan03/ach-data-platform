@@ -1,0 +1,17 @@
+# dbt-duckdb profile. Committed on purpose: there are no credentials in it.
+# ACH_WAREHOUSE_PATH is set by docker-compose / CI; the default resolves
+# relative to this file for local runs from the repo.
+ach_dbt:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('ACH_WAREHOUSE_PATH', '../../data/warehouse/ach.duckdb') }}"
+      # DuckDB is a single-writer engine. Model-level parallelism inside one
+      # dbt process is fine (one connection, many threads); two *processes*
+      # writing the same file are not -- see ADR-0002.
+      threads: 4
+    prod:
+      type: duckdb
+      path: "{{ env_var('ACH_WAREHOUSE_PATH', '/opt/airflow/data/warehouse/ach.duckdb') }}"
+      threads: 4

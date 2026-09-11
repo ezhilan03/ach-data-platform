@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # No monitoring stack in CI: an unset Pushgateway URL makes every metric
+  # push a no-op rather than something to mock out.
+  PUSHGATEWAY_URL: ""
+  GRAFANA_URL: ""
+
+jobs:
+  lint-and-test:
+    name: Lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - run: uv sync --extra dev
+      - name: ruff (lint)
+        run: uv run ruff check .
+      - name: ruff (format)
+        run: uv run ruff format --check .
+      - name: pytest
+        run: uv run pytest -v
+
+  pipeline:
+    name: Run the pipeline and enforce quality floors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - run: uv sync --extra dbt
+
+      # The same steps the Airflow DAGs run, minus the orchestration. If this
+      # job passes, a reviewer knows the models compile, the data satisfies
+      # every dbt test, and the detector still finds the labeled incidents.
+      - name: Land the synthetic lake
+        run: uv run python -m ach_platform backfill
+
+      - name: dbt build (models + tests)
+        run: uv run python -m ach_platform dbt build
+
+      - name: Detect anomalies
+        run: uv run python -m ach_platform detect --no-push
+
+      # Rules-only: there is no model in CI, and adding one would make the
+      # build depend on a third-party endpoint's availability and bill.
+      - name: Triage (rules baseline only)
+        run: uv run python -m ach_platform triage --no-llm --no-annotate
+
+      - name: Evaluate against labeled incidents
+        run: uv run python -m ach_platform eval
+
+      - name: Enforce quality floors
+        run: uv run python scripts/check_eval.py
+
+      - name: Cross-check the dbt marts against the reference implementation
+        run: uv run python scripts/crosscheck_marts.py
+
+      - name: Upload evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: |
+            data/runs/eval.json
+            data/runs/anomalies.json
+            dbt/ach_dbt/target/run_results.json
+          retention-days: 14
+
+  terraform:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.3"
+      - name: terraform fmt
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+      # -backend=false: validation needs the provider schemas, not cloud
+      # credentials. Nothing here touches a real GCP project.
+      - name: terraform init
+        run: terraform -chdir=infra/terraform init -backend=false
+      - name: terraform validate
+        run: terraform -chdir=infra/terraform validate
+
+  docker:
+    name: Build the Airflow image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ach-data-platform:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The image's own smoke test. This parses the DAG files against the exact
+      # Airflow and Task SDK the platform runs, which is the only version that
+      # matters -- an import error here is a DAG that would silently not run.
+      - name: Verify DAGs parse inside the image
+        run: |
+          docker run --rm \
+            -e ACH_LAKE_ROOT=/tmp/lake \
+            -e ACH_WAREHOUSE_PATH=/tmp/ach.duckdb \
+            -v "${{ github.workspace }}/airflow/dags:/opt/airflow/dags:ro" \
+            -v "${{ github.workspace }}/scripts:/opt/scripts:ro" \
+            ach-data-platform:ci \
+            python /opt/scripts/parse_dags.py /opt/airflow/dags
