@@ -9,7 +9,7 @@ No-op when GRAFANA_URL is unset.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import requests
 
@@ -17,7 +17,14 @@ from ach_platform.config import Settings
 
 
 def _ms(d: date, end_of_day: bool = False) -> int:
-    dt = datetime(d.year, d.month, d.day, 23 if end_of_day else 0, 59 if end_of_day else 0, tzinfo=timezone.utc)
+    dt = datetime(
+        d.year,
+        d.month,
+        d.day,
+        23 if end_of_day else 0,
+        59 if end_of_day else 0,
+        tzinfo=UTC,
+    )
     return int(dt.timestamp() * 1000)
 
 
@@ -49,6 +56,12 @@ def annotate_triage(settings: Settings, triage_records: list[dict]) -> int:
             f"Action: {verdict['recommended_action']}"
         )
         tags = ["ach", "anomaly", verdict["incident_type"], c["company_id"], source]
-        annotate(settings, date.fromisoformat(c["start_date"]), date.fromisoformat(c["end_date"]), text, tags)
+        annotate(
+            settings,
+            date.fromisoformat(c["start_date"]),
+            date.fromisoformat(c["end_date"]),
+            text,
+            tags,
+        )
         posted += 1
     return posted

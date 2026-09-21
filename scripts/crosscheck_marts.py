@@ -67,9 +67,7 @@ def main() -> int:
 
     con = duckdb.connect(str(settings.warehouse_path), read_only=True)
     try:
-        sql = con.execute(
-            "SELECT * FROM marts.fct_originator_daily ORDER BY company_id, effective_entry_date"
-        ).df()
+        sql = con.execute("SELECT * FROM marts.fct_originator_daily ORDER BY company_id, effective_entry_date").df()
     finally:
         con.close()
 
@@ -109,16 +107,24 @@ def main() -> int:
         n_bad = int(bad.sum())
         if n_bad:
             failures += 1
-            print(f"FAIL  {col:<{width}}  {n_bad} row(s) differ, max delta {diff[bad].max():.6g}", file=sys.stderr)
+            print(
+                f"FAIL  {col:<{width}}  {n_bad} row(s) differ, max delta {diff[bad].max():.6g}",
+                file=sys.stderr,
+            )
             for _, row in merged.loc[bad, key + [f"{col}_sql", f"{col}_ref"]].head(ns.max_report).iterrows():
-                print(f"    {row[key[0]]} {row[key[1]]}: warehouse={row[f'{col}_sql']} reference={row[f'{col}_ref']}",
-                      file=sys.stderr)
+                print(
+                    f"    {row[key[0]]} {row[key[1]]}: warehouse={row[f'{col}_sql']} reference={row[f'{col}_ref']}",
+                    file=sys.stderr,
+                )
         else:
             print(f"PASS  {col:<{width}}  {len(merged)} rows agree")
 
     if failures:
-        print(f"\n{failures} column(s) disagree between the dbt marts and the reference implementation. "
-              f"One of the two is wrong; the SQL is not automatically the right one.", file=sys.stderr)
+        print(
+            f"\n{failures} column(s) disagree between the dbt marts and the reference implementation. "
+            f"One of the two is wrong; the SQL is not automatically the right one.",
+            file=sys.stderr,
+        )
         return 1
     print(f"\nAll {len(COMPARE)} compared columns agree across {len(merged)} originator-days.")
     return 0

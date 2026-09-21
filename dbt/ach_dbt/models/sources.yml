@@ -35,7 +35,8 @@ sources:
           - name: return_code
             data_tests:
               - accepted_values:
-                  values: ["R01", "R02", "R03", "R04", "R05", "R07", "R08", "R09", "R10", "R11", "R16", "R20", "R29"]
+                  arguments:
+                    values: ["R01", "R02", "R03", "R04", "R05", "R07", "R08", "R09", "R10", "R11", "R16", "R20", "R29"]
       - name: originators
         description: Static originator dimension (synthetic).
         config:

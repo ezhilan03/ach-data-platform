@@ -77,14 +77,17 @@ number drops below the floor committed in
 | Day-level F1 | **0.72** | tp=17, fp=2, fn=11 |
 | Mean detection delay | **0.22 days** | Incident start to first flag |
 | Triage accuracy — rules baseline | **1.00** (9/9) | Baseline, *given* the detector signal |
-| Triage accuracy — LLM | run `make eval` | Model, from the evidence packet alone |
+| Triage accuracy — LLM | run `make triage && make eval` | Model, from the evidence packet alone |
 
 Recall by incident type: `duplicate_file` 1.00, `nsf_spike` 1.00,
 `settlement_delay` 1.00, `unauthorized_return_spike` 1.00, `volume_drop` 1.00,
 `admin_return_spike` 0.50.
 
-Regenerate this table from the latest run with `python scripts/eval_table.py` —
-the numbers are generated, not typed.
+Measured from the shipped dbt marts, not from a model of them: every figure
+above comes from `data/runs/eval.json` after a real `dbt build`, and
+`make crosscheck` confirms those marts agree column-for-column with an
+independent pandas implementation. Regenerate the table with
+`python scripts/eval_table.py` — the numbers are generated, not typed.
 
 ### Reading these numbers honestly
 
@@ -136,7 +139,7 @@ litellm supports to switch; see [`.env.example`](.env.example).
 ## What is in here
 
 ```
-airflow/dags/        3 asset-scheduled DAGs; thin wiring over src/
+airflow/dags/        3 asset-scheduled DAGs; wiring only, no logic, no sibling imports
 dbt/ach_dbt/         staging → intermediate → marts, 40+ tests, 2 macros
 src/ach_platform/    generator, landing, validation, detector, triage, eval, metrics
 monitoring/          statsd mapping, Prometheus scrape + alert rules,
@@ -144,7 +147,7 @@ monitoring/          statsd mapping, Prometheus scrape + alert rules,
 infra/terraform/     Artifact Registry, GCS lake bucket, scoped service account
 scripts/             quality gates: eval floors, mart cross-check, DAG parse
 tests/               unit tests + an independent pandas reference implementation
-docs/adr/            7 architecture decision records
+docs/adr/            8 architecture decision records
 ```
 
 ### Things worth a look
@@ -161,6 +164,15 @@ by one row passes every one of them. So `fct_originator_daily` is computed a
 second time in pandas from the generator's own output and compared row by row,
 in CI. Two independent implementations agreeing is evidence; one implementation
 passing its own tests is not.
+
+It earned that on its first real run. Four columns disagreed, and the warehouse
+was always *short*: the ingest looked back 16 calendar days for returns arriving
+on a given day, but an unauthorized return on a Friday entry can arrive 17
+calendar days after the effective date. Seven of 4,369 returns were generated
+and never landed. Every partition was well-formed, all 46 dbt tests passed, and
+the only symptom was a handful of originator-days reporting slightly lower
+unauthorized return rates than the truth. `test_every_return_lands_exactly_once`
+now pins the invariant.
 
 **`monitoring/`** — Airflow's metrics answer *is the pipeline healthy*. They say
 nothing about whether the data is. Rows landed, contract violations, dbt test

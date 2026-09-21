@@ -52,11 +52,22 @@ def ingest_day(settings: Settings, d: date, push: bool = True) -> dict:
 def dbt_command(settings: Settings, args: list[str] | None = None, dbt_bin: str | None = None) -> list[str]:
     # DBT_BIN points at dbt's own virtualenv inside the Airflow image (ADR-0004).
     dbt_bin = dbt_bin or os.environ.get("DBT_BIN", "dbt")
-    return [dbt_bin, *(args or ["build"]), "--project-dir", str(DBT_PROJECT_DIR), "--profiles-dir", str(DBT_PROJECT_DIR)]
+    return [
+        dbt_bin,
+        *(args or ["build"]),
+        "--project-dir",
+        str(DBT_PROJECT_DIR),
+        "--profiles-dir",
+        str(DBT_PROJECT_DIR),
+    ]
 
 
 def run_dbt(settings: Settings, args: list[str] | None = None, dbt_bin: str | None = None) -> Path:
-    env = {**os.environ, "ACH_LAKE_ROOT": str(settings.lake_root), "ACH_WAREHOUSE_PATH": str(settings.warehouse_path)}
+    env = {
+        **os.environ,
+        "ACH_LAKE_ROOT": str(settings.lake_root),
+        "ACH_WAREHOUSE_PATH": str(settings.warehouse_path),
+    }
     settings.warehouse_path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(dbt_command(settings, args, dbt_bin), check=True, env=env)
     return DBT_PROJECT_DIR / "target" / "run_results.json"
@@ -71,23 +82,33 @@ def detect(settings: Settings, push: bool = True) -> dict:
     by_signal: dict[str, int] = {}
     for a in anomalies:
         by_signal[a.signal] = by_signal.get(a.signal, 0) + 1
-    summary = {"anomalies": len(anomalies), "clusters": len(clusters), "by_signal": by_signal, "path": str(out_path)}
+    summary = {
+        "anomalies": len(anomalies),
+        "clusters": len(clusters),
+        "by_signal": by_signal,
+        "path": str(out_path),
+    }
     if push:
         import duckdb
 
         con = duckdb.connect(str(settings.warehouse_path), read_only=True)
         try:
-            latest = con.execute(
-                """
+            latest = (
+                con.execute(
+                    """
                 SELECT company_id, entry_count, unauthorized_return_rate, admin_return_rate, nsf_return_rate
                 FROM marts.fct_originator_daily
                 WHERE effective_entry_date = (
                     SELECT max(effective_entry_date) - INTERVAL 14 DAY FROM marts.fct_originator_daily
                 )
                 """
-            ).df().to_dict("records")
-            breaches = con.execute(
-                """
+                )
+                .df()
+                .to_dict("records")
+            )
+            breaches = (
+                con.execute(
+                    """
                 SELECT
                     sum(breaches_unauthorized_threshold::int) AS unauthorized,
                     sum(breaches_admin_threshold::int)        AS administrative,
@@ -95,7 +116,10 @@ def detect(settings: Settings, push: bool = True) -> dict:
                 FROM marts.fct_return_rate_60d
                 WHERE as_of_date = (SELECT max(as_of_date) FROM marts.fct_return_rate_60d)
                 """
-            ).df().to_dict("records")[0]
+                )
+                .df()
+                .to_dict("records")[0]
+            )
         finally:
             con.close()
         metrics.push_data_health(settings, latest, by_signal, {k: int(v or 0) for k, v in breaches.items()})
@@ -112,15 +136,34 @@ def triage(settings: Settings, use_llm: bool = True, annotate: bool = True) -> d
     records = json.loads(out.read_text())["records"]
     posted = annotate_triage(settings, records) if annotate else 0
     llm_ok = sum(1 for r in records if r.get("llm"))
-    return {"clusters": len(records), "llm_success": llm_ok, "annotations_posted": posted, "path": str(out)}
+    return {
+        "clusters": len(records),
+        "llm_success": llm_ok,
+        "annotations_posted": posted,
+        "path": str(out),
+    }
 
 
 def _cluster_from_json(c: dict) -> anomaly_mod.AnomalyCluster:
     anomalies = [
-        anomaly_mod.Anomaly(a["company_id"], date.fromisoformat(a["day"]), a["signal"], a["observed"], a["baseline"], a["score"], a["detail"])
+        anomaly_mod.Anomaly(
+            a["company_id"],
+            date.fromisoformat(a["day"]),
+            a["signal"],
+            a["observed"],
+            a["baseline"],
+            a["score"],
+            a["detail"],
+        )
         for a in c["anomalies"]
     ]
-    return anomaly_mod.AnomalyCluster(c["cluster_id"], c["company_id"], date.fromisoformat(c["start_date"]), date.fromisoformat(c["end_date"]), anomalies)
+    return anomaly_mod.AnomalyCluster(
+        c["cluster_id"],
+        c["company_id"],
+        date.fromisoformat(c["start_date"]),
+        date.fromisoformat(c["end_date"]),
+        anomalies,
+    )
 
 
 def evaluate(settings: Settings, out_path: Path | None = None, push: bool = True) -> dict:

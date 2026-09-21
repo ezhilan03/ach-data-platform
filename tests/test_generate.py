@@ -54,7 +54,14 @@ def test_returns_arrive_after_settlement_and_only_from_landed_days():
 def test_incident_plan_covers_every_type_and_respects_windows():
     gen = Generator(42, START, END)
     types = {i.incident_type for i in gen.incidents}
-    assert types == {"unauthorized_return_spike", "admin_return_spike", "nsf_spike", "volume_drop", "duplicate_file", "settlement_delay"}
+    assert types == {
+        "unauthorized_return_spike",
+        "admin_return_spike",
+        "nsf_spike",
+        "volume_drop",
+        "duplicate_file",
+        "settlement_delay",
+    }
     for inc in gen.incidents:
         assert inc.start_date >= START + timedelta(days=16)
         assert inc.end_date <= END - timedelta(days=16)
@@ -95,3 +102,43 @@ def test_volume_drop_incident_reduces_volume():
     o = next(o for o in gen.originators if o.company_id == inc.company_id)
     n = len([e for e in gen.day_bundle(inc.start_date).entries if e["company_id"] == inc.company_id])
     assert n < 0.3 * o.base_daily_volume
+
+
+def test_every_return_lands_exactly_once():
+    """The invariant the ingest lookback exists to guarantee.
+
+    A return is generated when its originating entry is generated, but it is
+    *landed* on the day it arrives, which the ingest finds by looking back over
+    recent days. If that window is too narrow the lake silently drops returns:
+    every partition is still well-formed and every dbt test still passes, and
+    the only symptom is a return rate that is quietly too low.
+
+    That is exactly what happened -- a 16-day lookback dropped 7 of 4,369
+    returns, all of them entries originated on a Friday whose unauthorized
+    return arrived 17 calendar days later.
+    """
+    gen = Generator(42, START, END)
+    generated, landed = set(), []
+    d = START
+    while d <= END:
+        generated |= {r["return_id"] for r in gen.day_bundle(d).returns if r["return_date"] <= END}
+        landed += [r["return_id"] for r in gen.returns_arriving_on(d)]
+        d += timedelta(days=1)
+
+    assert len(landed) == len(set(landed)), "a return was landed in more than one partition"
+    missing = generated - set(landed)
+    assert not missing, f"{len(missing)} generated returns never land in any partition"
+
+
+def test_return_lag_stays_inside_the_ingest_lookback():
+    """Guards the bound directly, so a change to the lag distribution or to the
+    settlement-delay magnitude fails here rather than silently truncating."""
+    gen = Generator(42, START, END)
+    default_lookback = Generator.returns_arriving_on.__defaults__[0]
+    worst = 0
+    d = START
+    while d <= END:
+        for r in gen.day_bundle(d).returns:
+            worst = max(worst, (r["return_date"] - r["original_effective_date"]).days)
+        d += timedelta(days=1)
+    assert worst <= default_lookback, f"worst gap {worst}d exceeds the {default_lookback}d lookback"

@@ -1,5 +1,15 @@
 """Assets are the contract between the three DAGs.
 
+This lives in the installed package, not beside the DAG files, because Airflow 3
+does not put the DAGs folder on ``sys.path``. A sibling ``from assets import ...``
+raises ModuleNotFoundError in the DAG processor, every DAG silently fails to
+import, and the only signal is an import-error counter -- the exact failure this
+project's alerting exists to catch, which is a poor way to find out.
+
+Importing this module requires Airflow; nothing else in ``ach_platform`` does,
+and ``__init__`` deliberately does not import it, so the package stays usable
+in CI and on a laptop without Airflow installed.
+
 Airflow 3 schedules on assets rather than on cron-plus-hope: the transform DAG
 does not run at 06:30 and trust that ingest finished, it runs when the raw
 partition for a day actually exists. Same for evaluation. The result is that

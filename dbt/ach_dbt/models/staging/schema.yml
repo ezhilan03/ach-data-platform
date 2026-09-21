@@ -9,11 +9,13 @@ models:
       - name: sec_code
         data_tests:
           - accepted_values:
-              values: ["PPD", "CCD", "WEB", "TEL"]
+              arguments:
+                values: ["PPD", "CCD", "WEB", "TEL"]
       - name: transaction_code
         data_tests:
           - accepted_values:
-              values: ["22", "27", "32", "37"]
+              arguments:
+                values: ["22", "27", "32", "37"]
       - name: amount_cents
         data_tests: [not_null]
       - name: settlement_lag_days
@@ -27,15 +29,17 @@ models:
       - name: return_class
         data_tests:
           - accepted_values:
-              values: ["unauthorized", "administrative", "nsf", "other"]
+              arguments:
+                values: ["unauthorized", "administrative", "nsf", "other"]
       - name: original_entry_id
         data_tests:
           - not_null
           # Every return must point at an entry we have. Fails loudly if the
           # ingest ever lands returns for entries it never landed.
           - relationships:
-              to: ref('stg_ach_entries')
-              field: entry_id
+              arguments:
+                to: ref('stg_ach_entries')
+                field: entry_id
 
   - name: stg_ach_files
     columns:

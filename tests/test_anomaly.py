@@ -9,11 +9,22 @@ def _row(company="ORIG0001", day=date(2026, 8, 1), **over):
     # A quiet 200-entry day for an originator whose trailing 14 days pooled
     # 2,800 entries with 3 unauthorized, 14 administrative and 56 NSF returns.
     base = dict(
-        company_id=company, effective_entry_date=day, entry_count=200, file_count=1,
-        unauthorized_return_count=0, admin_return_count=1, nsf_return_count=4,
-        duplicate_ratio=0.0, avg_settlement_lag_days=1.0,
-        baseline_days=14, baseline_entry_count=200.0, baseline_settlement_lag_days=1.0,
-        baseline_entry_sum=2800.0, baseline_unauthorized_sum=3.0, baseline_admin_sum=14.0, baseline_nsf_sum=56.0,
+        company_id=company,
+        effective_entry_date=day,
+        entry_count=200,
+        file_count=1,
+        unauthorized_return_count=0,
+        admin_return_count=1,
+        nsf_return_count=4,
+        duplicate_ratio=0.0,
+        avg_settlement_lag_days=1.0,
+        baseline_days=14,
+        baseline_entry_count=200.0,
+        baseline_settlement_lag_days=1.0,
+        baseline_entry_sum=2800.0,
+        baseline_unauthorized_sum=3.0,
+        baseline_admin_sum=14.0,
+        baseline_nsf_sum=56.0,
     )
     base.update(over)
     return base
@@ -89,4 +100,6 @@ def test_cluster_groups_consecutive_days_and_splits_on_gaps():
 def test_config_is_overridable():
     row = _row(entry_count=90, baseline_entry_count=200.0)  # 45%: not a drop by default
     assert detect(pd.DataFrame([row]), as_of=AS_OF) == []
-    assert [a.signal for a in detect(pd.DataFrame([row]), DetectorConfig(volume_drop_ratio=0.5), as_of=AS_OF)] == ["volume_drop"]
+    assert [a.signal for a in detect(pd.DataFrame([row]), DetectorConfig(volume_drop_ratio=0.5), as_of=AS_OF)] == [
+        "volume_drop"
+    ]

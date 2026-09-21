@@ -13,7 +13,8 @@ models:
     description: Originator x effective-date aggregates; the input to every mart and to the detector.
     data_tests:
       - unique_combination:
-          columns: [company_id, effective_entry_date]
+          arguments:
+            columns: [company_id, effective_entry_date]
     columns:
       - name: entry_count
         data_tests: [not_null]

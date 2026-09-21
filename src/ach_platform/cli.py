@@ -1,12 +1,12 @@
 """`python -m ach_platform <command>` -- the same steps Airflow runs, from a shell.
 
-    backfill              land dimensions + full history into the raw zone
-    ingest --date D       land + validate one day (what the daily DAG does)
-    dbt [args...]         run dbt with the project/profile dirs wired (default: build)
-    dbt-metrics           push target/run_results.json to the Pushgateway
-    detect                run the anomaly detector over the marts
-    triage [--no-llm]     triage detected clusters (rules baseline always; LLM optional)
-    eval                  score detector + triage against the labeled incidents
+backfill              land dimensions + full history into the raw zone
+ingest --date D       land + validate one day (what the daily DAG does)
+dbt [args...]         run dbt with the project/profile dirs wired (default: build)
+dbt-metrics           push target/run_results.json to the Pushgateway
+detect                run the anomaly detector over the marts
+triage [--no-llm]     triage detected clusters (rules baseline always; LLM optional)
+eval                  score detector + triage against the labeled incidents
 """
 
 from __future__ import annotations
@@ -22,7 +22,11 @@ from ach_platform.config import get_settings
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="ach_platform", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="ach_platform",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("backfill")

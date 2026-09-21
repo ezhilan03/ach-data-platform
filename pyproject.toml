@@ -45,7 +45,9 @@ build-backend = "hatchling.build"
 packages = ["src/ach_platform"]
 
 [tool.ruff]
-line-length = 100
+# 120, not 88/100: several lines are SQL fragments and prompt text that read
+# worse when broken. The formatter enforces it, so it is not a suggestion.
+line-length = 120
 target-version = "py311"
 src = ["src", "tests", "airflow/dags"]
 

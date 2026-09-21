@@ -42,7 +42,14 @@ import pandas as pd
 
 from ach_platform.config import Settings
 
-SIGNALS = ("unauthorized_rate", "admin_rate", "nsf_rate", "volume_drop", "duplicate_ratio", "settlement_lag")
+SIGNALS = (
+    "unauthorized_rate",
+    "admin_rate",
+    "nsf_rate",
+    "volume_drop",
+    "duplicate_ratio",
+    "settlement_lag",
+)
 
 RATE_SIGNALS = (
     # signal, observed count column, pooled baseline count column
@@ -69,6 +76,10 @@ class DetectorConfig:
     duplicate_ratio_threshold: float = 0.2
     # Settlement
     settlement_lag_delta_days: float = 1.0
+
+
+# The one default configuration, named once rather than rebuilt per call.
+DEFAULT_CONFIG = DetectorConfig()
 
 
 @dataclass(frozen=True)
@@ -137,7 +148,7 @@ def _num(v, default: float = 0.0) -> float:
     return default if v is None or (isinstance(v, float) and math.isnan(v)) else float(v)
 
 
-def detect(daily: pd.DataFrame, cfg: DetectorConfig = DetectorConfig(), as_of: date | None = None) -> list[Anomaly]:
+def detect(daily: pd.DataFrame, cfg: DetectorConfig = DEFAULT_CONFIG, as_of: date | None = None) -> list[Anomaly]:
     """Flag anomalous originator-days. `daily` has fct_originator_daily's columns."""
     if daily.empty:
         return []
@@ -165,8 +176,10 @@ def detect(daily: pd.DataFrame, cfg: DetectorConfig = DetectorConfig(), as_of: d
                 if k >= cfg.min_return_count and p < cfg.alpha:
                     observed = k / entries
                     score = -math.log10(max(p, 1e-300))
-                    why = (f"{k} returns on {entries} entries ({observed:.2%}) vs baseline {p0:.2%} "
-                           f"(expected {lam:.1f}; p={p:.1e})")
+                    why = (
+                        f"{k} returns on {entries} entries ({observed:.2%}) vs baseline {p0:.2%} "
+                        f"(expected {lam:.1f}; p={p:.1e})"
+                    )
                     out.append(Anomaly(row.company_id, d, signal, observed, p0, score, why))
 
         # --- volume drop -----------------------------------------------------
@@ -175,16 +188,30 @@ def detect(daily: pd.DataFrame, cfg: DetectorConfig = DetectorConfig(), as_of: d
             ratio = entries / base_vol
             if ratio < cfg.volume_drop_ratio:
                 out.append(
-                    Anomaly(row.company_id, d, "volume_drop", float(entries), base_vol, ratio,
-                            f"{entries} entries vs baseline {base_vol:.0f} ({ratio:.0%})")
+                    Anomaly(
+                        row.company_id,
+                        d,
+                        "volume_drop",
+                        float(entries),
+                        base_vol,
+                        ratio,
+                        f"{entries} entries vs baseline {base_vol:.0f} ({ratio:.0%})",
+                    )
                 )
 
         # --- duplicate submissions ------------------------------------------
         dup_ratio = _num(getattr(row, "duplicate_ratio", 0))
         if entries >= cfg.min_entries_for_rate and dup_ratio > cfg.duplicate_ratio_threshold:
             out.append(
-                Anomaly(row.company_id, d, "duplicate_ratio", dup_ratio, 0.0, dup_ratio,
-                        f"{dup_ratio:.0%} of entries are duplicate submissions ({int(_num(row.file_count, 1))} files)")
+                Anomaly(
+                    row.company_id,
+                    d,
+                    "duplicate_ratio",
+                    dup_ratio,
+                    0.0,
+                    dup_ratio,
+                    f"{dup_ratio:.0%} of entries are duplicate submissions ({int(_num(row.file_count, 1))} files)",
+                )
             )
 
         # --- settlement lag (banking days) ------------------------------------
@@ -192,8 +219,15 @@ def detect(daily: pd.DataFrame, cfg: DetectorConfig = DetectorConfig(), as_of: d
         base_lag = _num(getattr(row, "baseline_settlement_lag_days", 0))
         if has_baseline and lag - base_lag >= cfg.settlement_lag_delta_days:
             out.append(
-                Anomaly(row.company_id, d, "settlement_lag", lag, base_lag, lag - base_lag,
-                        f"avg settlement lag {lag:.1f} banking days vs baseline {base_lag:.1f}")
+                Anomaly(
+                    row.company_id,
+                    d,
+                    "settlement_lag",
+                    lag,
+                    base_lag,
+                    lag - base_lag,
+                    f"avg settlement lag {lag:.1f} banking days vs baseline {base_lag:.1f}",
+                )
             )
 
     return sorted(out, key=lambda a: (a.company_id, a.day, a.signal))
@@ -227,6 +261,7 @@ def _make_cluster(company_id: str, items: list[Anomaly]) -> AnomalyCluster:
 # I/O
 # --------------------------------------------------------------------------- #
 
+
 def load_daily(settings: Settings) -> pd.DataFrame:
     import duckdb
 
@@ -237,7 +272,9 @@ def load_daily(settings: Settings) -> pd.DataFrame:
         con.close()
 
 
-def detect_from_warehouse(settings: Settings, cfg: DetectorConfig = DetectorConfig()) -> tuple[list[Anomaly], list[AnomalyCluster], Path]:
+def detect_from_warehouse(
+    settings: Settings, cfg: DetectorConfig = DEFAULT_CONFIG
+) -> tuple[list[Anomaly], list[AnomalyCluster], Path]:
     daily = load_daily(settings)
     anomalies = detect(daily, cfg)
     clusters = cluster(anomalies)
@@ -246,7 +283,9 @@ def detect_from_warehouse(settings: Settings, cfg: DetectorConfig = DetectorConf
     out_path.write_text(
         json.dumps(
             {
-                "as_of": max(pd.to_datetime(daily["effective_entry_date"]).dt.date).isoformat() if not daily.empty else None,
+                "as_of": max(pd.to_datetime(daily["effective_entry_date"]).dt.date).isoformat()
+                if not daily.empty
+                else None,
                 "config": asdict(cfg),
                 "anomaly_count": len(anomalies),
                 "clusters": [c.to_json() for c in clusters],

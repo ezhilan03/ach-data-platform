@@ -22,8 +22,8 @@ from __future__ import annotations
 
 import pendulum
 from airflow.sdk import dag, task
-from assets import ACH_MARTS, ACH_RAW_DAILY
 
+from ach_platform.assets import ACH_MARTS, ACH_RAW_DAILY
 from ach_platform.config import get_settings
 from ach_platform.pipeline import detect as detect_impl
 from ach_platform.pipeline import publish_dbt_metrics as publish_dbt_metrics_impl
@@ -53,12 +53,7 @@ def ach_transform():
         Retries are off -- a dbt test failure is a data problem, and running it
         again will fail again while making the logs harder to read.
         """
-        return (
-            "$DBT_BIN build "
-            "--project-dir $DBT_PROJECT_DIR "
-            "--profiles-dir $DBT_PROJECT_DIR "
-            "--target prod"
-        )
+        return "$DBT_BIN build --project-dir $DBT_PROJECT_DIR --profiles-dir $DBT_PROJECT_DIR --target prod"
 
     @task(trigger_rule="all_done")
     def publish_dbt_metrics() -> dict:
@@ -90,7 +85,11 @@ def ach_transform():
     def publish_marts(detection: dict, triage_result: dict) -> dict:
         """Declare the marts fresh. Nothing runs here -- reaching this task is
         the statement: dbt tests passed, detection ran, triage ran."""
-        return {"anomalies": detection["anomalies"], "clusters": detection["clusters"], "triaged": triage_result["clusters"]}
+        return {
+            "anomalies": detection["anomalies"],
+            "clusters": detection["clusters"],
+            "triaged": triage_result["clusters"],
+        }
 
     built = dbt_build()
     built >> publish_dbt_metrics()

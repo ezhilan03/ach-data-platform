@@ -21,9 +21,14 @@ def _cluster(cid, days, signal="admin_rate"):
 
 def test_detection_metrics_basic():
     # Incident Mon 8/3 - Wed 8/5 (3 banking days). Detector flags Tue+Wed and a spurious Friday.
-    incidents = [_inc("A", "admin_return_spike", date(2026, 8, 3), date(2026, 8, 5)),
-                 _inc("B", "volume_drop", date(2026, 8, 10), date(2026, 8, 11))]
-    clusters = [_cluster("A", [date(2026, 8, 4), date(2026, 8, 5)]), _cluster("A", [date(2026, 8, 14)])]
+    incidents = [
+        _inc("A", "admin_return_spike", date(2026, 8, 3), date(2026, 8, 5)),
+        _inc("B", "volume_drop", date(2026, 8, 10), date(2026, 8, 11)),
+    ]
+    clusters = [
+        _cluster("A", [date(2026, 8, 4), date(2026, 8, 5)]),
+        _cluster("A", [date(2026, 8, 14)]),
+    ]
     m = evaluate_detection(incidents, clusters)
     assert (m.day_tp, m.day_fp, m.day_fn) == (2, 1, 1 + 2)
     assert m.incident_detected == 1 and m.incident_total == 2
@@ -42,9 +47,21 @@ def test_weekend_days_are_not_counted_as_truth():
 def test_triage_metrics_rules_vs_llm():
     incidents = [_inc("A", "nsf_spike", date(2026, 8, 3), date(2026, 8, 5))]
     records = [
-        {"cluster": _cluster("A", [date(2026, 8, 4)]), "rules": {"incident_type": "nsf_spike"}, "llm": {"incident_type": "admin_return_spike"}},
-        {"cluster": _cluster("Z", [date(2026, 8, 20)]), "rules": {"incident_type": "volume_drop"}, "llm": {"incident_type": "no_incident"}},
-        {"cluster": _cluster("Y", [date(2026, 8, 21)]), "rules": {"incident_type": "volume_drop"}, "llm": None},
+        {
+            "cluster": _cluster("A", [date(2026, 8, 4)]),
+            "rules": {"incident_type": "nsf_spike"},
+            "llm": {"incident_type": "admin_return_spike"},
+        },
+        {
+            "cluster": _cluster("Z", [date(2026, 8, 20)]),
+            "rules": {"incident_type": "volume_drop"},
+            "llm": {"incident_type": "no_incident"},
+        },
+        {
+            "cluster": _cluster("Y", [date(2026, 8, 21)]),
+            "rules": {"incident_type": "volume_drop"},
+            "llm": None,
+        },
     ]
     t = evaluate_triage(incidents, records)
     assert t["rules"]["accuracy_on_true_incidents"] == 1.0
@@ -53,3 +70,26 @@ def test_triage_metrics_rules_vs_llm():
     assert t["rules"]["no_incident_rate_on_fp_clusters"] == 0.0
     assert t["llm"]["failed"] == 1
     assert t["llm"]["confusion"]["nsf_spike"] == {"admin_return_spike": 1}
+
+
+def test_skipped_llm_is_not_counted_as_a_failure():
+    """A rules-only run (CI has no model) must report zero model failures, not
+    one per cluster -- ach_eval_triage_failures is an alerting metric."""
+    incidents = [_inc("A", "nsf_spike", date(2026, 8, 3), date(2026, 8, 5))]
+    records = [
+        {
+            "cluster": _cluster("A", [date(2026, 8, 4)]),
+            "rules": {"incident_type": "nsf_spike"},
+            "llm": None,
+            "llm_meta": {"skipped": True},
+        },
+        {
+            "cluster": _cluster("A", [date(2026, 8, 5)]),
+            "rules": {"incident_type": "nsf_spike"},
+            "llm": None,
+            "llm_meta": {"error": "connection refused"},
+        },
+    ]
+    t = evaluate_triage(incidents, records)
+    assert t["llm"]["failed"] == 1
+    assert t["rules"]["n"] == 2

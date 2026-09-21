@@ -19,7 +19,10 @@ RETURN_CODES: dict[str, tuple[str, str]] = {
     "R08": ("Payment stopped", "other"),
     "R09": ("Uncollected funds", "nsf"),
     "R10": ("Customer advises originator not known / not authorized", "unauthorized"),
-    "R11": ("Customer advises entry not in accordance with the terms of authorization", "unauthorized"),
+    "R11": (
+        "Customer advises entry not in accordance with the terms of authorization",
+        "unauthorized",
+    ),
     "R16": ("Account frozen", "other"),
     "R20": ("Non-transaction account", "other"),
     "R29": ("Corporate customer advises not authorized", "unauthorized"),

@@ -1,129 +1,95 @@
-# First run on the build machine
+# What still needs a human
 
-This repository was authored in a sandbox with no package-registry access, so
-three layers have never executed: the dbt SQL against DuckDB, the DAG files
-against a real Airflow, and the Docker stack. Everything that could be checked
-without those was (unit tests, the banking-day closed form, the dashboard JSON
-layout, syntax across every file), but "it compiles" is not "it is correct".
+Most of the bring-up is done and verified on a Linux machine with the real
+toolchain (Python 3.12, duckdb 1.5.5, dbt-core 1.12.5, dbt-duckdb 1.11.0,
+apache-airflow 3.3.1). What follows is what that environment could not reach.
 
-Work through this once, in order. Delete this file afterwards.
+Delete this file once it is empty.
 
-## 1. Install and lock
+## Verified already — no action needed
 
-```bash
-cd ~/projects/ach-data-platform
-make install
-make lock            # commit the resulting uv.lock
-```
+| Step | Result |
+| --- | --- |
+| `uv sync --extra dbt --extra dev` | clean |
+| `ruff check` / `ruff format --check` | clean, 40 files |
+| `pytest` | 36 passed |
+| `python -m ach_platform backfill` | 181,635 entries · 1,009 files · 4,369 returns · 181 Parquet partitions |
+| `dbt build` | PASS=57 (11 models, 46 tests), 1.8s, no deprecation warnings |
+| `scripts/crosscheck_marts.py` | 17 columns agree across 1,008 originator-days |
+| `detect` → `triage --no-llm` → `eval` | reproduces the README table exactly |
+| `scripts/check_eval.py` | all floors met |
+| `scripts/parse_dags.py` (real `DagBag`, Airflow 3.3.1) | 3 DAGs, 0 import errors |
 
-## 2. Run the pipeline locally, before any containers
+Three bugs were found and fixed in the process; see the git log and
+[ADR-0008](adr/0008-dag-files-are-thin-wiring.md).
 
-```bash
-make backfill        # ~1-2 min: 60 days of Parquet + the ground-truth plan
-make dbt             # first execution of the SQL — expect to fix things here
-```
+## 1. The Docker stack — not run
 
-Most likely places the SQL needs a nudge, in rough order of probability:
-
-- `banking_days_between` uses `//` for integer division and `dayofweek()`.
-  If DuckDB complains, the arithmetic is pinned by `tests/test_banking_days.py`
-  — port that closed form, do not invent a new one.
-- The `range between interval 59 days preceding` window in
-  `fct_return_rate_60d` needs an `ORDER BY` on a date/timestamp column;
-  DuckDB may want `INTERVAL 59 DAY` spelled differently.
-- The `external_location` on the `raw` source renders `{name}` per table.
-  Check that `ACH_LAKE_ROOT` resolves — run `dbt compile` and read
-  `target/compiled/` if a source fails to resolve.
-
-## 3. Verify the marts against the reference implementation
-
-```bash
-make crosscheck
-```
-
-This is the important one. It recomputes `fct_originator_daily` in pandas from
-the generator's own output and compares 17 columns row by row. If the SQL and
-the reference disagree, **one of them is wrong** — do not assume it is the
-reference. Likely suspects are the trailing-window frame (must exclude the
-current row) and the settlement-lag units.
-
-## 4. Measure, then update the README
-
-```bash
-make detect
-make triage-rules    # rules only, no model needed
-make eval
-make check           # enforces eval/thresholds.json
-python scripts/eval_table.py
-```
-
-The README's results table currently carries numbers measured through the
-**pandas reference implementation**, because the SQL had never run. If step 3
-passes, they will match. If `eval_table.py` prints anything different, paste
-its output into the README — the table is generated, not typed.
-
-Then ratchet `eval/thresholds.json` up to sit just under the real numbers.
-
-## 5. Add the model
-
-```bash
-ollama serve &
-ollama pull qwen3:4b
-make triage          # rules + LLM
-make eval
-python scripts/eval_table.py   # now includes the LLM row
-```
-
-The interesting question is not whether the LLM beats 1.00 on classification —
-it cannot, and the rules baseline is handed the answer. It is
-`no_incident_rate_on_fp_clusters`: on the 2 false-positive clusters, does the
-model correctly say "this is noise" where the lookup table structurally cannot?
-That number is the actual case for the LLM being in the pipeline, and it is in
-`data/runs/eval.json` under `triage.llm`.
-
-## 6. Bring up the stack
+No Docker daemon was available. Everything above ran against a local venv, so
+the image build, the compose topology, and the services talking to each other
+are still unverified.
 
 ```bash
 make build
-make parse-dags      # DAG import check inside the image — do this before `up`
+make parse-dags     # the same DAG check, but inside the image
 make up
 make airflow-password
 ```
 
 Watch for:
 
-- `@task.bash` returning a command string is Airflow 3's form; if the task
-  fails on the decorator, check the `airflow.sdk` import.
-- `AirflowSkipException` on weekends should show as *skipped*, not failed.
+- The image installs `ach_platform` from `src/`, and the DAGs now import
+  `ach_platform.assets`. If the DAG processor reports import errors, the
+  package did not install — check the `pip install /opt/ach` layer.
+- `dbt` lives at `/opt/dbt-venv/bin/dbt` (`$DBT_BIN`), not on `PATH`.
 - The Simple auth manager writes its password file on first apiserver start.
   If it never appears, set `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS=true`
   in `.env` to bypass login for a local demo.
-- Ollama from inside the container reaches the host at
-  `host.docker.internal:11434` (already set in compose via `extra_hosts`).
+- Unpause `ach_ingest`; catchup replays the history. `ach_transform` and
+  `ach_eval` fire on their assets.
 
-Unpause `ach_ingest`. Catchup replays the history; `ach_transform` and
-`ach_eval` fire on their assets.
+## 2. The Grafana dashboards — never seen live
 
-## 7. Check the dashboards, then screenshot them
-
-Grafana at `localhost:3000`, folder **ACH Platform**. Two dashboards. The panel
-queries were written against the metric names in
-`monitoring/statsd/mapping.yml` but have never been run against live data —
-expect one or two "No data" panels where a metric name needs adjusting. The
-fix is always in the mapping file or the panel `expr`, never in the pipeline.
+The panel queries were written against the metric names in
+`monitoring/statsd/mapping.yml` and validated for JSON and layout, but have
+never rendered against real data. Expect one or two "No data" panels where a
+metric name needs adjusting; the fix belongs in the mapping file or the panel
+`expr`, never in the pipeline.
 
 Screenshots of both dashboards belong in the README (`docs/img/`). A monitoring
-project without a picture of the monitoring is asking a reader to take it on
-faith.
+project with no picture of the monitoring asks the reader to take it on faith.
 
-## 8. Push
+## 3. LLM triage — never measured
+
+No Ollama was reachable, so the triage step has only ever run as the rules
+baseline. Every LLM figure in the README is still blank.
 
 ```bash
-git init && git add -A
-git commit -m "ACH data platform: Airflow 3 + dbt/DuckDB + Prometheus/Grafana"
+ollama serve &
+ollama pull qwen3:4b
+make triage
+make eval
+python scripts/eval_table.py    # now includes the LLM row — paste it into the README
+```
+
+The interesting number is not classification accuracy — the rules baseline
+scores 1.00 there and is handed the answer. It is
+`triage.llm.no_incident_rate_on_fp_clusters` in `data/runs/eval.json`: on the
+two false-positive clusters, does the model say "this is noise" where the
+lookup table structurally cannot? That is the case for the LLM being in the
+pipeline at all, and if it comes back weak, ADR-0007 already says what to do.
+
+## 4. Push
+
+```bash
+cd ~/projects/ach-data-platform
 gh repo create ezhilan03/ach-data-platform --public --source=. --push
 ```
 
-CI runs on the first push. The `pipeline` job reproduces the numbers in the
-README on a clean machine, which is the strongest single signal in the repo —
-worth confirming it goes green before the portfolio card links to it.
+CI runs on first push. The `pipeline` job reproduces the README's numbers on a
+clean machine, which is the strongest single signal in the repo — worth
+confirming it goes green before the portfolio card links to it.
+
+The `docker` job builds the image and runs the DAG parse inside it, which is
+the check that caught the `sys.path` bug. If it passes, section 1 above is
+largely settled too.

@@ -64,13 +64,23 @@ class DetectionMetrics:
 
     def to_json(self) -> dict:
         return {
-            "day_level": {"tp": self.day_tp, "fp": self.day_fp, "fn": self.day_fn,
-                          "precision": round(self.day_precision, 4), "recall": round(self.day_recall, 4), "f1": round(self.day_f1, 4)},
-            "incident_level": {"incidents": self.incident_total, "detected": self.incident_detected,
-                               "recall": round(self.incident_recall, 4),
-                               "clusters": self.cluster_total, "clusters_overlapping_truth": self.cluster_true,
-                               "precision": round(self.cluster_precision, 4),
-                               "mean_detection_delay_days": self.mean_detection_delay_days},
+            "day_level": {
+                "tp": self.day_tp,
+                "fp": self.day_fp,
+                "fn": self.day_fn,
+                "precision": round(self.day_precision, 4),
+                "recall": round(self.day_recall, 4),
+                "f1": round(self.day_f1, 4),
+            },
+            "incident_level": {
+                "incidents": self.incident_total,
+                "detected": self.incident_detected,
+                "recall": round(self.incident_recall, 4),
+                "clusters": self.cluster_total,
+                "clusters_overlapping_truth": self.cluster_true,
+                "precision": round(self.cluster_precision, 4),
+                "mean_detection_delay_days": self.mean_detection_delay_days,
+            },
             "recall_by_incident_type": {k: round(v, 4) for k, v in self.by_type_recall.items()},
         }
 
@@ -80,7 +90,9 @@ def _safe_div(a: float, b: float) -> float:
 
 
 def _days(start: date, end: date) -> set[date]:
-    return {start + timedelta(days=i) for i in range((end - start).days + 1) if (start + timedelta(days=i)).weekday() < 5}
+    return {
+        start + timedelta(days=i) for i in range((end - start).days + 1) if (start + timedelta(days=i)).weekday() < 5
+    }
 
 
 def _overlapping_incident(cluster: dict, incidents: list[Incident]) -> Incident | None:
@@ -114,9 +126,13 @@ def evaluate_detection(incidents: list[Incident], clusters: list[dict]) -> Detec
 
     cluster_true = sum(1 for c in clusters if _overlapping_incident(c, incidents) is not None)
     return DetectionMetrics(
-        day_tp=tp, day_fp=fp, day_fn=fn,
-        incident_total=len(incidents), incident_detected=detected,
-        cluster_total=len(clusters), cluster_true=cluster_true,
+        day_tp=tp,
+        day_fp=fp,
+        day_fn=fn,
+        incident_total=len(incidents),
+        incident_detected=detected,
+        cluster_total=len(clusters),
+        cluster_true=cluster_true,
         mean_detection_delay_days=round(sum(delays) / len(delays), 2) if delays else None,
         by_type_recall={t: sum(v) / len(v) for t, v in sorted(by_type_hit.items())},
     )
@@ -125,7 +141,17 @@ def evaluate_detection(incidents: list[Incident], clusters: list[dict]) -> Detec
 def evaluate_triage(incidents: list[Incident], records: list[dict]) -> dict:
     """Per-method accuracy over clusters. Returns a JSON-ready dict."""
     methods = ("rules", "llm")
-    out: dict = {m: {"n": 0, "correct": 0, "no_incident_on_fp": 0, "fp_clusters": 0, "failed": 0, "confusion": {}} for m in methods}
+    out: dict = {
+        m: {
+            "n": 0,
+            "correct": 0,
+            "no_incident_on_fp": 0,
+            "fp_clusters": 0,
+            "failed": 0,
+            "confusion": {},
+        }
+        for m in methods
+    }
     for rec in records:
         inc = _overlapping_incident(rec["cluster"], incidents)
         truth_type = inc.incident_type if inc else "no_incident"
@@ -133,7 +159,8 @@ def evaluate_triage(incidents: list[Incident], records: list[dict]) -> dict:
             pred = rec.get(m)
             stats = out[m]
             if pred is None:
-                if m == "llm":
+                # Only count a failure when the model was actually asked.
+                if m == "llm" and not (rec.get("llm_meta") or {}).get("skipped"):
                     stats["failed"] += 1
                 continue
             pred_type = pred["incident_type"]
@@ -169,7 +196,11 @@ def run_eval(settings: Settings, out_path: Path | None = None) -> dict:
         "incidents": len(incidents),
         "detector_config": anomalies.get("config"),
         "detection": detection.to_json(),
-        "triage": {"model": triage.get("model"), "clusters_evaluated": len(triage["records"]), **evaluate_triage(incidents, triage["records"])},
+        "triage": {
+            "model": triage.get("model"),
+            "clusters_evaluated": len(triage["records"]),
+            **evaluate_triage(incidents, triage["records"]),
+        },
     }
     out_path = out_path or (settings.runs_dir / "eval.json")
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,12 +213,15 @@ def format_report(result: dict) -> str:
     t = result["triage"]
     lines = [
         f"as_of {result['as_of']}  incidents {result['incidents']}",
-        f"detection day-level     P={d['precision']:.3f} R={d['recall']:.3f} F1={d['f1']:.3f}  (tp={d['tp']} fp={d['fp']} fn={d['fn']})",
+        f"detection day-level     P={d['precision']:.3f} R={d['recall']:.3f} F1={d['f1']:.3f}"
+        f"  (tp={d['tp']} fp={d['fp']} fn={d['fn']})",
         f"detection incident-level recall={i['recall']:.3f} ({i['detected']}/{i['incidents']})  "
         f"cluster precision={i['precision']:.3f} ({i['clusters_overlapping_truth']}/{i['clusters']})  "
         f"mean delay={i['mean_detection_delay_days']}d",
-        "recall by type          " + ", ".join(f"{k}={v:.2f}" for k, v in result["detection"]["recall_by_incident_type"].items()),
+        "recall by type          "
+        + ", ".join(f"{k}={v:.2f}" for k, v in result["detection"]["recall_by_incident_type"].items()),
         f"triage rules            acc={t['rules']['accuracy_on_true_incidents']:.3f} (n={t['rules']['n']})",
-        f"triage llm [{t['model']}]  acc={t['llm']['accuracy_on_true_incidents']:.3f} (n={t['llm']['n']}, failed={t['llm']['failed']})",
+        f"triage llm [{t['model']}]  acc={t['llm']['accuracy_on_true_incidents']:.3f}"
+        f" (n={t['llm']['n']}, failed={t['llm']['failed']})",
     ]
     return "\n".join(lines)

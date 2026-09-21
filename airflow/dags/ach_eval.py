@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import pendulum
 from airflow.sdk import dag, task
-from assets import ACH_MARTS
 
+from ach_platform.assets import ACH_MARTS
 from ach_platform.config import get_settings
 from ach_platform.evaluate import format_report
 from ach_platform.pipeline import evaluate as evaluate_impl

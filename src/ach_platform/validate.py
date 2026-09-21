@@ -37,7 +37,13 @@ class ValidationReport:
         return all(v == 0 for v in self.violations.values())
 
     def to_json(self) -> dict:
-        return {"day": self.day, "ok": self.ok, "rows": self.rows, "violations": self.violations, "warnings": self.warnings}
+        return {
+            "day": self.day,
+            "ok": self.ok,
+            "rows": self.rows,
+            "violations": self.violations,
+            "warnings": self.warnings,
+        }
 
 
 def _sql_list(values) -> str:
@@ -64,16 +70,32 @@ def validate_day(d: date, settings: Settings) -> ValidationReport:
             (report.violations if hard else report.warnings)[name] = int(n)
 
         # --- entries ---------------------------------------------------------
-        count("entries_null_keys", "SELECT count(*) FROM ach_entries WHERE entry_id IS NULL OR trace_number IS NULL OR company_id IS NULL")
+        count(
+            "entries_null_keys",
+            "SELECT count(*) FROM ach_entries WHERE entry_id IS NULL OR trace_number IS NULL OR company_id IS NULL",
+        )
         count("entries_dup_entry_id", "SELECT count(*) - count(DISTINCT entry_id) FROM ach_entries")
         count(
             "entries_dup_trace_in_file",
-            "SELECT count(*) - (SELECT count(*) FROM (SELECT DISTINCT file_id, trace_number FROM ach_entries)) FROM ach_entries",
+            "SELECT count(*) - (SELECT count(*) FROM"
+            " (SELECT DISTINCT file_id, trace_number FROM ach_entries)) FROM ach_entries",
         )
-        count("entries_nonpositive_amount", "SELECT count(*) FROM ach_entries WHERE amount_cents IS NULL OR amount_cents <= 0")
-        count("entries_bad_sec_code", f"SELECT count(*) FROM ach_entries WHERE sec_code NOT IN ({_sql_list(SEC_CODES)})")
-        count("entries_bad_tx_code", f"SELECT count(*) FROM ach_entries WHERE transaction_code NOT IN ({_sql_list(TRANSACTION_CODES)})")
-        count("entries_settles_before_effective", "SELECT count(*) FROM ach_entries WHERE settlement_date < effective_entry_date")
+        count(
+            "entries_nonpositive_amount",
+            "SELECT count(*) FROM ach_entries WHERE amount_cents IS NULL OR amount_cents <= 0",
+        )
+        count(
+            "entries_bad_sec_code",
+            f"SELECT count(*) FROM ach_entries WHERE sec_code NOT IN ({_sql_list(SEC_CODES)})",
+        )
+        count(
+            "entries_bad_tx_code",
+            f"SELECT count(*) FROM ach_entries WHERE transaction_code NOT IN ({_sql_list(TRANSACTION_CODES)})",
+        )
+        count(
+            "entries_settles_before_effective",
+            "SELECT count(*) FROM ach_entries WHERE settlement_date < effective_entry_date",
+        )
         count(
             "entries_wrong_partition",
             f"SELECT count(*) FROM ach_entries WHERE effective_entry_date <> DATE '{d.isoformat()}'",
@@ -90,8 +112,14 @@ def validate_day(d: date, settings: Settings) -> ValidationReport:
         )
 
         # --- returns ---------------------------------------------------------
-        count("returns_bad_code", f"SELECT count(*) FROM ach_returns WHERE return_code NOT IN ({_sql_list(RETURN_CODES)})")
-        count("returns_wrong_partition", f"SELECT count(*) FROM ach_returns WHERE return_date <> DATE '{d.isoformat()}'")
+        count(
+            "returns_bad_code",
+            f"SELECT count(*) FROM ach_returns WHERE return_code NOT IN ({_sql_list(RETURN_CODES)})",
+        )
+        count(
+            "returns_wrong_partition",
+            f"SELECT count(*) FROM ach_returns WHERE return_date <> DATE '{d.isoformat()}'",
+        )
         # A return must reference an entry that exists somewhere in the lake.
         # Soft check: on the very first days of a fresh lake the referenced
         # partitions may legitimately not be landed yet.

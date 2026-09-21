@@ -1,66 +1,63 @@
 #!/usr/bin/env python3
-"""Import every DAG file and report what was defined.
+"""Parse the DAG folder exactly the way Airflow's DAG processor does.
 
-Run inside the built image, where the real Airflow and Task SDK live. A DAG
-file with an import error does not crash anything loudly -- it just quietly
-stops being scheduled, and the only signal is a counter in the UI. This makes
-that failure a red build instead.
+Run inside the built image, where the real Airflow lives. A DAG file with an
+import error does not crash anything loudly -- it stops being scheduled, and
+the only signal is a counter in the UI. This makes that a red build instead.
 
-Executing the module runs the `@dag`-decorated factory calls, so this catches
-bad decorator arguments and bad asset definitions, not only bad imports.
+This uses Airflow's own DagBag rather than importing the files by hand, and
+that distinction is the whole point. An earlier version of this script did
+`sys.path.insert(0, dags_dir)` before importing each file, which made a
+sibling `from assets import ...` resolve here and nowhere else. Airflow 3 does
+NOT put the DAGs folder on sys.path, so all three DAGs failed to import in the
+real processor while this script reported a clean parse. A verification tool
+that is more permissive than production is worse than no tool at all.
 
 Usage:  python scripts/parse_dags.py [dags_dir]
 """
 
 from __future__ import annotations
 
-import importlib.util
+import os
 import sys
-import traceback
 from pathlib import Path
 
 
 def main(dags_dir: str) -> int:
-    root = Path(dags_dir)
+    root = Path(dags_dir).resolve()
     if not root.is_dir():
         print(f"not a directory: {root}", file=sys.stderr)
         return 2
-    # DAG files import each other by bare module name (`from assets import ...`),
-    # the same way the DAG processor makes the folder importable.
-    sys.path.insert(0, str(root))
 
-    files = sorted(p for p in root.glob("*.py") if not p.name.startswith("_"))
+    # Configure the folder before importing airflow so DagBag and the processor
+    # agree on what they are parsing.
+    os.environ.setdefault("AIRFLOW__CORE__DAGS_FOLDER", str(root))
+    os.environ.setdefault("AIRFLOW__CORE__LOAD_EXAMPLES", "False")
+
+    from airflow.models.dagbag import DagBag
+
+    bag = DagBag(str(root))
+
+    files = sorted(p.name for p in root.glob("*.py") if not p.name.startswith("_"))
     if not files:
         print(f"no DAG files found in {root}", file=sys.stderr)
         return 2
 
-    failures = 0
-    dag_ids: list[str] = []
-    for path in files:
-        spec = importlib.util.spec_from_file_location(path.stem, path)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[path.stem] = module
-        try:
-            spec.loader.exec_module(module)
-        except Exception:
-            failures += 1
-            print(f"FAIL  {path.name}", file=sys.stderr)
-            traceback.print_exc()
-            continue
-        found = []
-        for value in vars(module).values():
-            dag_id = getattr(value, "dag_id", None)
-            if dag_id and type(value).__name__ in ("DAG", "SerializedDAG"):
-                found.append(dag_id)
-        dag_ids.extend(found)
-        print(f"OK    {path.name}" + (f"  -> {', '.join(sorted(found))}" if found else "  (no DAG defined)"))
+    for dag_id in sorted(bag.dags):
+        dag = bag.dags[dag_id]
+        schedule = getattr(dag, "schedule", None) or getattr(dag, "timetable", None)
+        print(f"OK    {dag_id:<16} schedule={schedule!s:<40.40} tasks={len(dag.tasks)}")
 
-    print(f"\n{len(files) - failures}/{len(files)} files parsed; DAGs defined: {', '.join(sorted(dag_ids)) or 'none'}")
-    if failures:
-        print(f"{failures} DAG file(s) failed to import.", file=sys.stderr)
+    for path, err in bag.import_errors.items():
+        print(f"FAIL  {Path(path).name}", file=sys.stderr)
+        print("      " + err.strip().splitlines()[-1], file=sys.stderr)
+
+    print(f"\n{len(files)} file(s) scanned, {len(bag.dags)} DAG(s) found, {len(bag.import_errors)} import error(s)")
+
+    if bag.import_errors:
         return 1
-    if not dag_ids:
-        print("no DAG objects were defined by any file -- the DAG processor would find nothing.", file=sys.stderr)
+    if not bag.dags:
+        print("no DAGs were found -- the processor would schedule nothing.", file=sys.stderr)
         return 1
     return 0
 

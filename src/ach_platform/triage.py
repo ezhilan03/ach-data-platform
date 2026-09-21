@@ -95,6 +95,7 @@ Be specific. Cite the numbers. Do not invent data that is not in the packet."""
 # Evidence
 # --------------------------------------------------------------------------- #
 
+
 def _clean(v):
     if isinstance(v, float):
         if pd.isna(v):
@@ -116,14 +117,28 @@ def build_evidence(
     """Assemble what the LLM sees. Signal names are intentionally absent."""
     daily = daily.copy()
     daily["effective_entry_date"] = pd.to_datetime(daily["effective_entry_date"]).dt.date
-    window = daily[(daily.company_id == c.company_id) & (daily.effective_entry_date >= c.start_date) & (daily.effective_entry_date <= c.end_date)]
+    window = daily[
+        (daily.company_id == c.company_id)
+        & (daily.effective_entry_date >= c.start_date)
+        & (daily.effective_entry_date <= c.end_date)
+    ]
     prior = daily[(daily.company_id == c.company_id) & (daily.effective_entry_date < c.start_date)].tail(10)
 
     cols = [
-        "effective_entry_date", "entry_count", "file_count", "unauthorized_return_rate", "admin_return_rate",
-        "nsf_return_rate", "overall_return_rate", "duplicate_ratio", "avg_settlement_lag_days",
-        "baseline_entry_count", "baseline_unauthorized_return_rate", "baseline_admin_return_rate",
-        "baseline_nsf_return_rate", "baseline_settlement_lag_days",
+        "effective_entry_date",
+        "entry_count",
+        "file_count",
+        "unauthorized_return_rate",
+        "admin_return_rate",
+        "nsf_return_rate",
+        "overall_return_rate",
+        "duplicate_ratio",
+        "avg_settlement_lag_days",
+        "baseline_entry_count",
+        "baseline_unauthorized_return_rate",
+        "baseline_admin_return_rate",
+        "baseline_nsf_return_rate",
+        "baseline_settlement_lag_days",
     ]
     cols = [col for col in cols if col in window.columns]
 
@@ -142,18 +157,25 @@ def build_evidence(
 
     return {
         "originator": {k: _clean(v) for k, v in originator.items()},
-        "window": {"start": c.start_date.isoformat(), "end": c.end_date.isoformat(), "days_flagged": len({a.day for a in c.anomalies})},
+        "window": {
+            "start": c.start_date.isoformat(),
+            "end": c.end_date.isoformat(),
+            "days_flagged": len({a.day for a in c.anomalies}),
+        },
         "flagged_days": [{col: _clean(r[col]) for col in cols} for _, r in window.iterrows()],
         "prior_days_summary": {
             "days": len(prior),
             "avg_entry_count": _clean(prior["entry_count"].mean()) if not prior.empty else None,
-            "avg_unauthorized_return_rate": _clean(prior["unauthorized_return_rate"].mean()) if not prior.empty else None,
+            "avg_unauthorized_return_rate": _clean(prior["unauthorized_return_rate"].mean())
+            if not prior.empty
+            else None,
             "avg_admin_return_rate": _clean(prior["admin_return_rate"].mean()) if not prior.empty else None,
             "avg_nsf_return_rate": _clean(prior["nsf_return_rate"].mean()) if not prior.empty else None,
             "avg_settlement_lag_days": _clean(prior["avg_settlement_lag_days"].mean()) if not prior.empty else None,
         },
         "return_codes_arriving_in_window": [
-            {"code": code, "description": RETURN_CODES.get(code, ("?", "?"))[0], "count": int(n)} for code, n in top_codes.items()
+            {"code": code, "description": RETURN_CODES.get(code, ("?", "?"))[0], "count": int(n)}
+            for code, n in top_codes.items()
         ],
         "nacha_thresholds": {"unauthorized": 0.005, "administrative": 0.03, "overall": 0.15},
     }
@@ -163,13 +185,17 @@ def build_evidence(
 # Rules baseline
 # --------------------------------------------------------------------------- #
 
+
 def rules_triage(c: AnomalyCluster) -> TriageResult:
     itype = SIGNAL_TO_TYPE[c.dominant_signal]
     severity = "high" if itype in ("unauthorized_return_spike", "duplicate_file", "admin_return_spike") else "medium"
     return TriageResult(
         incident_type=itype,  # type: ignore[arg-type]
         severity=severity,
-        root_cause_hypothesis=f"Rules baseline: dominant detector signal '{c.dominant_signal}' over {len(c.anomalies)} flagged day-signals.",
+        root_cause_hypothesis=(
+            f"Rules baseline: dominant detector signal '{c.dominant_signal}' "
+            f"over {len(c.anomalies)} flagged day-signals."
+        ),
         recommended_action="Rules baseline does not produce an action; see LLM triage.",
         evidence_cited=[a.detail for a in c.anomalies[:4]],
     )
@@ -196,7 +222,12 @@ def extract_json(text: str) -> dict:
 def _complete(messages: list[dict], settings: Settings) -> str:
     import litellm
 
-    kwargs: dict = {"model": settings.triage_model, "messages": messages, "temperature": 0, "timeout": 180}
+    kwargs: dict = {
+        "model": settings.triage_model,
+        "messages": messages,
+        "temperature": 0,
+        "timeout": 180,
+    }
     if settings.triage_model.startswith(("ollama/", "ollama_chat/")):
         kwargs["api_base"] = settings.ollama_api_base
     try:
@@ -231,7 +262,10 @@ def llm_triage(evidence: dict, settings: Settings, max_attempts: int = 2) -> tup
             meta["errors"].append(str(exc)[:500])
             messages.append({"role": "assistant", "content": raw})
             messages.append(
-                {"role": "user", "content": f"Your response was not valid. Error: {exc}\nRespond again with ONLY the JSON object."}
+                {
+                    "role": "user",
+                    "content": f"Your response was not valid. Error: {exc}\nRespond again with ONLY the JSON object.",
+                }
             )
     raise RuntimeError(f"triage failed after {max_attempts} attempts: {last_error}")
 
@@ -239,6 +273,7 @@ def llm_triage(evidence: dict, settings: Settings, max_attempts: int = 2) -> tup
 # --------------------------------------------------------------------------- #
 # Orchestration
 # --------------------------------------------------------------------------- #
+
 
 def load_context(settings: Settings) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, dict]]:
     import duckdb
@@ -248,7 +283,8 @@ def load_context(settings: Settings) -> tuple[pd.DataFrame, pd.DataFrame, dict[s
         daily = con.execute("SELECT * FROM marts.fct_originator_daily").df()
         codes = con.execute("SELECT * FROM marts.fct_return_codes_daily").df()
         dims = con.execute(
-            "SELECT company_id, company_name, industry, primary_sec_code, base_daily_volume, lifetime_return_rate FROM marts.dim_originators"
+            "SELECT company_id, company_name, industry, primary_sec_code,"
+            " base_daily_volume, lifetime_return_rate FROM marts.dim_originators"
         ).df()
     finally:
         con.close()
@@ -266,7 +302,10 @@ def triage_clusters(clusters: list[AnomalyCluster], settings: Settings, use_llm:
             "evidence": evidence,
             "rules": rules_triage(c).model_dump(),
             "llm": None,
-            "llm_meta": None,
+            # "skipped" distinguishes "no model was configured" from "the model
+            # was asked and produced nothing usable". Conflating them reports a
+            # rules-only CI run as 11 model failures.
+            "llm_meta": None if use_llm else {"skipped": True},
         }
         if use_llm:
             try:

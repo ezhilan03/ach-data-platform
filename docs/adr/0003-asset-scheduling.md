@@ -12,8 +12,9 @@ traditional shape is three cron schedules staggered by an educated guess
 
 `ach_ingest` runs `@daily`. `ach_transform` is scheduled on the
 `ach_raw_daily` asset. `ach_eval` is scheduled on the `ach_marts` asset.
-Assets are declared once in `airflow/dags/assets.py` and attached as `outlets`
-to the task that actually produces them.
+Assets are declared once in `ach_platform.assets` -- in the installed
+package, not beside the DAG files, for the reason in [ADR-0008](0008-dag-files-are-thin-wiring.md)
+-- and attached as `outlets` to the task that actually produces them.
 
 ## Why
 

@@ -50,22 +50,70 @@ INCIDENT_TYPES = (
 # thresholds (0.5% unauthorized, 3% administrative) so that incidents are the
 # only thing that crosses them.
 INDUSTRIES: dict[str, dict] = {
-    "utilities": dict(sec="PPD", debit_share=0.98, volume=220, mu=4.6, sigma=0.5,
-                      rates=dict(unauthorized=0.0006, administrative=0.004, nsf=0.010, other=0.0005)),
-    "subscription_media": dict(sec="WEB", debit_share=0.99, volume=300, mu=2.7, sigma=0.3,
-                               rates=dict(unauthorized=0.0020, administrative=0.006, nsf=0.018, other=0.0008)),
-    "payroll": dict(sec="PPD", debit_share=0.03, volume=180, mu=7.2, sigma=0.4,
-                    rates=dict(unauthorized=0.0001, administrative=0.003, nsf=0.0005, other=0.0003)),
-    "consumer_lending": dict(sec="WEB", debit_share=0.97, volume=140, mu=5.5, sigma=0.4,
-                             rates=dict(unauthorized=0.0018, administrative=0.005, nsf=0.030, other=0.0010)),
-    "insurance": dict(sec="PPD", debit_share=0.95, volume=160, mu=5.1, sigma=0.35,
-                      rates=dict(unauthorized=0.0008, administrative=0.004, nsf=0.012, other=0.0006)),
-    "b2b_supplier": dict(sec="CCD", debit_share=0.60, volume=60, mu=8.0, sigma=0.7,
-                         rates=dict(unauthorized=0.0004, administrative=0.006, nsf=0.008, other=0.0010)),
-    "fitness": dict(sec="PPD", debit_share=0.99, volume=120, mu=3.6, sigma=0.2,
-                    rates=dict(unauthorized=0.0025, administrative=0.007, nsf=0.020, other=0.0008)),
-    "telecom_collections": dict(sec="TEL", debit_share=0.99, volume=90, mu=4.3, sigma=0.5,
-                                rates=dict(unauthorized=0.0030, administrative=0.010, nsf=0.035, other=0.0012)),
+    "utilities": dict(
+        sec="PPD",
+        debit_share=0.98,
+        volume=220,
+        mu=4.6,
+        sigma=0.5,
+        rates=dict(unauthorized=0.0006, administrative=0.004, nsf=0.010, other=0.0005),
+    ),
+    "subscription_media": dict(
+        sec="WEB",
+        debit_share=0.99,
+        volume=300,
+        mu=2.7,
+        sigma=0.3,
+        rates=dict(unauthorized=0.0020, administrative=0.006, nsf=0.018, other=0.0008),
+    ),
+    "payroll": dict(
+        sec="PPD",
+        debit_share=0.03,
+        volume=180,
+        mu=7.2,
+        sigma=0.4,
+        rates=dict(unauthorized=0.0001, administrative=0.003, nsf=0.0005, other=0.0003),
+    ),
+    "consumer_lending": dict(
+        sec="WEB",
+        debit_share=0.97,
+        volume=140,
+        mu=5.5,
+        sigma=0.4,
+        rates=dict(unauthorized=0.0018, administrative=0.005, nsf=0.030, other=0.0010),
+    ),
+    "insurance": dict(
+        sec="PPD",
+        debit_share=0.95,
+        volume=160,
+        mu=5.1,
+        sigma=0.35,
+        rates=dict(unauthorized=0.0008, administrative=0.004, nsf=0.012, other=0.0006),
+    ),
+    "b2b_supplier": dict(
+        sec="CCD",
+        debit_share=0.60,
+        volume=60,
+        mu=8.0,
+        sigma=0.7,
+        rates=dict(unauthorized=0.0004, administrative=0.006, nsf=0.008, other=0.0010),
+    ),
+    "fitness": dict(
+        sec="PPD",
+        debit_share=0.99,
+        volume=120,
+        mu=3.6,
+        sigma=0.2,
+        rates=dict(unauthorized=0.0025, administrative=0.007, nsf=0.020, other=0.0008),
+    ),
+    "telecom_collections": dict(
+        sec="TEL",
+        debit_share=0.99,
+        volume=90,
+        mu=4.3,
+        sigma=0.5,
+        rates=dict(unauthorized=0.0030, administrative=0.010, nsf=0.035, other=0.0012),
+    ),
 }
 
 ROUTING_POOL_SIZE = 40
@@ -134,6 +182,7 @@ class Incident:
 # Calendar helpers (banking days = Mon-Fri; federal holidays deliberately ignored)
 # --------------------------------------------------------------------------- #
 
+
 def is_banking_day(d: date) -> bool:
     return d.weekday() < 5
 
@@ -159,6 +208,7 @@ def banking_days_between(start: date, end: date) -> list[date]:
 # --------------------------------------------------------------------------- #
 # Static dimensions: originators and the incident plan
 # --------------------------------------------------------------------------- #
+
 
 def _stable_id(*parts: object) -> str:
     return str(uuid.uuid5(NAMESPACE, ":".join(str(p) for p in parts)))
@@ -198,12 +248,27 @@ def build_originators(seed: int, n: int = 24) -> list[Originator]:
 
 _INCIDENT_SPECS = {
     # type: (min_days, max_days, magnitude range, description)
-    "unauthorized_return_spike": (3, 5, (0.015, 0.04), "Unauthorized returns (R05/R07/R10/R11/R29) spike to {m:.1%} of entries"),
-    "admin_return_spike": (3, 5, (0.05, 0.12), "Administrative returns (R02/R03/R04) spike to {m:.1%} of entries"),
+    "unauthorized_return_spike": (
+        3,
+        5,
+        (0.015, 0.04),
+        "Unauthorized returns (R05/R07/R10/R11/R29) spike to {m:.1%} of entries",
+    ),
+    "admin_return_spike": (
+        3,
+        5,
+        (0.05, 0.12),
+        "Administrative returns (R02/R03/R04) spike to {m:.1%} of entries",
+    ),
     "nsf_spike": (3, 5, (0.06, 0.12), "NSF returns (R01/R09) spike to {m:.1%} of entries"),
     "volume_drop": (2, 3, (0.85, 0.95), "Originated volume drops by {m:.0%} (missed/partial file)"),
     "duplicate_file": (1, 2, (1.0, 1.0), "Day's file submitted twice -- every entry duplicated"),
-    "settlement_delay": (2, 3, (2.0, 2.0), "Settlement lags effective date by an extra {m:.0f} banking days"),
+    "settlement_delay": (
+        2,
+        3,
+        (2.0, 2.0),
+        "Settlement lags effective date by an extra {m:.0f} banking days",
+    ),
 }
 
 
@@ -274,6 +339,7 @@ def incident_for(incidents: list[Incident], company_id: str, d: date) -> Inciden
 # --------------------------------------------------------------------------- #
 # Per-day generation
 # --------------------------------------------------------------------------- #
+
 
 def _account_hash(company_id: str, customer_idx: int) -> str:
     return hashlib.sha256(f"{company_id}:{customer_idx}".encode()).hexdigest()[:32]
@@ -438,8 +504,12 @@ class Generator:
                         "file_sequence": file_seq,
                         "batch_count": 1,
                         "entry_count": len(rows),
-                        "total_debit_cents": sum(r["amount_cents"] for r in rows if r["transaction_code"] in ("27", "37")),
-                        "total_credit_cents": sum(r["amount_cents"] for r in rows if r["transaction_code"] in ("22", "32")),
+                        "total_debit_cents": sum(
+                            r["amount_cents"] for r in rows if r["transaction_code"] in ("27", "37")
+                        ),
+                        "total_credit_cents": sum(
+                            r["amount_cents"] for r in rows if r["transaction_code"] in ("22", "32")
+                        ),
                     }
                 )
 
@@ -454,9 +524,26 @@ class Generator:
             row.pop("customer_idx", None)
         return DayBundle(d, entries, files, returns)
 
-    def returns_arriving_on(self, d: date, lookback_days: int = 16) -> list[dict]:
-        """Returns whose return_date == d. Unauthorized returns lag up to 10 banking
-        days (+ settlement), so we look back 16 calendar days to be safe."""
+    def returns_arriving_on(self, d: date, lookback_days: int = 24) -> list[dict]:
+        """Returns whose return_date == d.
+
+        The lookback has to cover the worst-case gap between an entry's effective
+        date and its return's arrival, or the lake silently loses returns.
+
+        Worst case: settlement is 1 banking day, or 3 during a settlement_delay
+        incident; an unauthorized return then lags up to 10 more banking days.
+        13 banking days starting on a Friday spans 19 calendar days. The measured
+        maximum on seed 42 is 17.
+
+        This was 16, which dropped 7 of 4,369 returns -- entries originated on a
+        Friday whose unauthorized return arrived 17 calendar days later. Nothing
+        in the pipeline noticed: the partitions were well-formed, every dbt test
+        passed, and the only symptom was that a handful of originator-days
+        reported slightly lower unauthorized return rates than they should have.
+        scripts/crosscheck_marts.py caught it by disagreeing with the reference
+        implementation. See test_every_return_lands_exactly_once, which pins the
+        invariant the lookback exists to guarantee.
+        """
         arriving: list[dict] = []
         # Never look before history_start: those days are never landed, so their
         # returns would be orphans in the lake (and fail the relationships test).

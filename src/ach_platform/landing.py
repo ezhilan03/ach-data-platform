@@ -130,10 +130,17 @@ def land_day(generator: Generator, d: date, settings: Settings) -> dict:
 
 def land_dimensions(generator: Generator, settings: Settings) -> dict:
     """Static originator dimension + the ground-truth incident plan (for eval only)."""
-    n = write_parquet(generator.originator_rows(), "originators", settings.raw_dir("originators") / "originators.parquet")
+    n = write_parquet(
+        generator.originator_rows(),
+        "originators",
+        settings.raw_dir("originators") / "originators.parquet",
+    )
     settings.ground_truth_dir.mkdir(parents=True, exist_ok=True)
     gt_path = settings.ground_truth_dir / "incidents.json"
-    payload = json.dumps({"generator": generator.summary(), "incidents": [i.to_json() for i in generator.incidents]}, indent=2)
+    payload = json.dumps(
+        {"generator": generator.summary(), "incidents": [i.to_json() for i in generator.incidents]},
+        indent=2,
+    )
     tmp = gt_path.with_suffix(".json.tmp")
     tmp.write_text(payload)
     os.replace(tmp, gt_path)

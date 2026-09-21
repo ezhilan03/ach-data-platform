@@ -3,22 +3,25 @@
     "Quality floors enforced by CI (scripts/check_eval.py) on every pull request.",
     "These are deliberately data, not code: ratcheting a floor up after a real",
     "improvement is a one-line diff that shows in review, and loosening one to",
-    "make a build pass is equally visible. Set them below the current measured",
-    "numbers by enough margin that seed-level noise cannot flake the build, and",
-    "raise them when a change genuinely earns it.",
+    "make a build pass is equally visible.",
     "",
-    "llm_triage_accuracy is absent on purpose: CI has no model, so the triage",
-    "step runs rules-only there. The LLM number is measured on the build",
-    "machine by `make eval` and reported in the README."
+    "Set on 2026-09-21 against the first measured run of the real warehouse:",
+    "day F1 0.723, day precision 0.895, incident recall 0.900, cluster precision",
+    "0.818, rules accuracy 1.000, mean delay 0.22d. The pipeline is deterministic",
+    "from ACH_SEED, so the only expected drift is float formatting across",
+    "platforms -- hence small margins rather than generous ones.",
+    "",
+    "llm_triage_accuracy is absent on purpose: CI has no model, so triage runs",
+    "rules-only there. The LLM number is measured on the build machine."
   ],
   "detection": {
-    "day_f1": 0.55,
-    "day_precision": 0.75,
-    "incident_recall": 0.7,
-    "cluster_precision": 0.6,
-    "max_mean_detection_delay_days": 2.0
+    "day_f1": 0.68,
+    "day_precision": 0.85,
+    "incident_recall": 0.85,
+    "cluster_precision": 0.78,
+    "max_mean_detection_delay_days": 0.5
   },
   "triage": {
-    "rules_accuracy": 0.6
+    "rules_accuracy": 0.9
   }
 }

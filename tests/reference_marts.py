@@ -71,7 +71,9 @@ def originator_daily(entries: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFra
 
     # Trailing 14 rows, excluding the current row -- same as the SQL window.
     def trailing(col: str, fn: str) -> pd.Series:
-        return daily.groupby("company_id")[col].transform(lambda s: getattr(s.shift(1).rolling(14, min_periods=1), fn)())
+        return daily.groupby("company_id")[col].transform(
+            lambda s: getattr(s.shift(1).rolling(14, min_periods=1), fn)()
+        )
 
     daily["baseline_days"] = daily.groupby("company_id").cumcount().clip(upper=14)
     daily["baseline_entry_count"] = trailing("entry_count", "mean")

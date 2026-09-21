@@ -17,10 +17,10 @@ attached to the landing task, the downstream chain correctly does not fire.
 from __future__ import annotations
 
 import pendulum
-from airflow.exceptions import AirflowSkipException
 from airflow.sdk import dag, task
-from assets import ACH_RAW_DAILY
+from airflow.sdk.exceptions import AirflowSkipException
 
+from ach_platform.assets import ACH_RAW_DAILY
 from ach_platform.config import get_settings
 from ach_platform.generate import is_banking_day
 from ach_platform.pipeline import ingest_day
