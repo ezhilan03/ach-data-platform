@@ -19,6 +19,8 @@ Delete this file once it is empty.
 | `detect` → `triage --no-llm` → `eval` | reproduces the README table exactly |
 | `scripts/check_eval.py` | all floors met |
 | `scripts/parse_dags.py` (real `DagBag`, Airflow 3.3.1) | 3 DAGs, 0 import errors |
+| `tests/test_monitoring_contract.py` | 9 checks — metric names, labels, compose mounts, scrape config all resolve |
+| secret / identity scan of the committed tree | clean: no credentials, no employer or vendor names, no personal paths |
 
 Three bugs were found and fixed in the process; see the git log and
 [ADR-0008](adr/0008-dag-files-are-thin-wiring.md).
@@ -50,11 +52,20 @@ Watch for:
 
 ## 2. The Grafana dashboards — never seen live
 
-The panel queries were written against the metric names in
-`monitoring/statsd/mapping.yml` and validated for JSON and layout, but have
-never rendered against real data. Expect one or two "No data" panels where a
-metric name needs adjusting; the fix belongs in the mapping file or the panel
-`expr`, never in the pipeline.
+The panels have never rendered against real data, but the risk is now much
+narrower than it was. `tests/test_monitoring_contract.py` checks statically
+that every metric a panel queries is one the code actually emits, that every
+label matcher and legend template references a declared label, and that the
+compose mounts, scrape targets and datasource UIDs resolve. It found two
+metrics being pushed on every run and charted nowhere
+(`ach_dbt_model_execution_seconds`, `ach_raw_validation_warnings`); both now
+have panels.
+
+What that cannot check is the Airflow side: those metric names depend on how
+`statsd_exporter` renders DogStatsD tags at runtime. If a panel on the
+pipeline-health dashboard shows "No data", read `http://localhost:9102/metrics`
+to see the names the exporter is actually producing, and fix
+`monitoring/statsd/mapping.yml` or the panel `expr` — never the pipeline.
 
 Screenshots of both dashboards belong in the README (`docs/img/`). A monitoring
 project with no picture of the monitoring asks the reader to take it on faith.

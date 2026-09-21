@@ -146,7 +146,8 @@ monitoring/          statsd mapping, Prometheus scrape + alert rules,
                      provisioned Grafana datasource and 2 dashboards
 infra/terraform/     Artifact Registry, GCS lake bucket, scoped service account
 scripts/             quality gates: eval floors, mart cross-check, DAG parse
-tests/               unit tests + an independent pandas reference implementation
+tests/               unit tests, an independent pandas reference implementation,
+                     and a static contract test for the monitoring stack
 docs/adr/            8 architecture decision records
 ```
 
@@ -180,6 +181,16 @@ outcomes, return rates, NACHA breaches and the detector's own precision and
 recall are pushed from the tasks to a Pushgateway, because a short-lived task
 is not something Prometheus can scrape.
 
+A Grafana panel querying a metric nothing emits does not fail — it renders
+"No data", which looks exactly like a healthy system with nothing to report.
+An alert rule with a typo is worse, because it can never fire and still looks
+like coverage. `tests/test_monitoring_contract.py` closes both statically:
+every metric a panel or rule queries must be one the code emits, every label
+matcher and `{{legend}}` must reference a declared label, and the compose
+mounts, scrape targets, rule-file paths and datasource UIDs must all resolve.
+It needs no Docker, which is the point — the monitoring stack is the hardest
+part of this project to exercise in CI, so it is checked without running it.
+
 **`dbt/ach_dbt/macros/banking_days_between.sql`** — a Friday entry settling
 Monday has a 1-day lag, not 3. Getting this wrong made every Friday look like
 an incident.
@@ -194,7 +205,8 @@ an incident.
 | Mart correctness | Independent pandas implementation, row by row | `make crosscheck` |
 | Detector quality | Precision / recall vs. labeled ground truth | `make eval` |
 | Quality regressions | Committed floors, enforced on every PR | `scripts/check_eval.py` |
-| DAG importability | Parsed inside the built image | `make parse-dags` |
+| DAG importability | Airflow's own `DagBag`, inside the built image | `make parse-dags` |
+| Monitoring contract | Every queried metric is emitted; every emitted metric is charted; compose mounts, scrape targets and datasource UIDs resolve | `tests/test_monitoring_contract.py` |
 | Infrastructure | `fmt -check`, `validate` | CI `terraform` job |
 
 `terraform apply` has not been run against a real GCP project; only formatting

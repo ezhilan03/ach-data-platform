@@ -31,6 +31,10 @@ dbt = [
 dev = [
     "pytest>=8.3",
     "ruff>=0.6",
+    # tests/test_monitoring_contract.py parses the compose file, the Prometheus
+    # config and the statsd mapping. It arrives transitively via dbt, but the
+    # unit tests must not depend on the dbt extra being installed.
+    "pyyaml>=6.0",
 ]
 # Note: apache-airflow is deliberately NOT a dependency here. The DAG files are
 # parsed inside the built image (scripts/parse_dags.py, run by the `docker` CI
