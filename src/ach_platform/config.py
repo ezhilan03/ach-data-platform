@@ -50,6 +50,22 @@ class Settings:
     # LLM triage
     triage_model: str = field(default_factory=lambda: _env("TRIAGE_MODEL", "ollama_chat/qwen3:4b"))
     ollama_api_base: str = field(default_factory=lambda: _env("OLLAMA_API_BASE", "http://localhost:11434"))
+    # A local 4B reasoning model on a laptop is slow: measured, qwen3:4b timed
+    # out on 8 of 11 clusters at 180s. Hosted APIs answer in seconds, so this
+    # is generous rather than tuned.
+    triage_timeout_s: float = field(default_factory=lambda: float(_env("TRIAGE_TIMEOUT_S", "600")))
+    # Qwen3 and its relatives emit a long <think> trace before the answer. For a
+    # structured classification whose reasoning we discard anyway, that is pure
+    # latency. "/no_think" is Qwen3's documented soft switch.
+    # Ollama turns response_format into grammar-constrained decoding, which on a
+    # small reasoning model can cost far more than it buys -- the prompt already
+    # demands JSON and extract_json is tolerant. Measured per deployment.
+    triage_use_json_format: bool = field(
+        default_factory=lambda: _env("TRIAGE_USE_JSON_FORMAT", "true").lower() in ("1", "true", "yes")
+    )
+    triage_disable_thinking: bool = field(
+        default_factory=lambda: _env("TRIAGE_DISABLE_THINKING", "true").lower() in ("1", "true", "yes")
+    )
 
     # Monitoring (empty string = disabled)
     pushgateway_url: str = field(default_factory=lambda: _env("PUSHGATEWAY_URL", ""))

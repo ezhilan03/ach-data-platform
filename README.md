@@ -68,20 +68,24 @@ number drops below the floor committed in
 10 labeled incidents across 6 incident types, 24 originators, 60 days,
 ~181,000 entries. Seed 42.
 
+<!-- eval:start -->
+10 labeled incidents, history through 2026-08-31, alpha=0.001, return window 14 days.
+
 | Measure | Value | What it means |
 | --- | --- | --- |
-| Incident recall | **0.90** (9/10) | Labeled incidents with at least one flagged day |
-| Cluster precision | **0.82** (9/11) | Flagged clusters that overlap a real incident |
+| Incident recall | **0.90 (9/10)** | Labeled incidents with at least one flagged day |
+| Cluster precision | **0.82 (9/11)** | Flagged clusters that overlap a real incident |
 | Day-level precision | **0.89** | Flagged originator-days that are inside an incident |
 | Day-level recall | **0.61** | Incident days the detector flagged |
 | Day-level F1 | **0.72** | tp=17, fp=2, fn=11 |
 | Mean detection delay | **0.22 days** | Incident start to first flag |
-| Triage accuracy — rules baseline | **1.00** (9/9) | Baseline, *given* the detector signal |
-| Triage accuracy — LLM | run `make triage && make eval` | Model, from the evidence packet alone |
+| Triage accuracy — rules baseline | **1.00 (n=9)** | Baseline, *given* the detector signal |
+| Triage accuracy — LLM (`ollama_chat/qwen3:4b`) | **1.00 (n=3)** | Model, from the evidence packet alone |
+| LLM — correctly called a false positive noise | **0.00 (0/0)** | What the rules baseline structurally cannot do |
+| LLM calls with no usable result | **8** | Timeout or schema failure after one retry |
 
-Recall by incident type: `duplicate_file` 1.00, `nsf_spike` 1.00,
-`settlement_delay` 1.00, `unauthorized_return_spike` 1.00, `volume_drop` 1.00,
-`admin_return_spike` 0.50.
+Recall by incident type: `admin_return_spike` 0.50, `duplicate_file` 1.00, `nsf_spike` 1.00, `settlement_delay` 1.00, `unauthorized_return_spike` 1.00, `volume_drop` 1.00
+<!-- eval:end -->
 
 Measured from the shipped dbt marts, not from a model of them: every figure
 above comes from `data/runs/eval.json` after a real `dbt build`, and

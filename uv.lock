@@ -34,6 +34,7 @@ dbt = [
 ]
 dev = [
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 
@@ -48,6 +49,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.32" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
 ]

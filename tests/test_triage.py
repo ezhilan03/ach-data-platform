@@ -127,3 +127,39 @@ def test_prompt_never_mentions_the_detector():
     # The model must reason from the numbers, not from which rule fired.
     for leak in ("detector", "flagged by", "rule fired", "dominant"):
         assert leak not in SYSTEM_PROMPT.lower()
+
+
+def test_thinking_switch_and_timeout_are_configurable(monkeypatch=None):
+    """qwen3:4b timed out on 8 of 11 clusters at the old hard-coded 180s. Both
+    the budget and the reasoning switch are now settings, so the next model
+    change is a config edit rather than a patch."""
+    import os
+
+    from ach_platform.config import Settings
+
+    for key in ("TRIAGE_TIMEOUT_S", "TRIAGE_DISABLE_THINKING"):
+        os.environ.pop(key, None)
+    s = Settings()
+    assert s.triage_timeout_s == 600.0
+    assert s.triage_disable_thinking is True
+
+    os.environ["TRIAGE_TIMEOUT_S"] = "45"
+    os.environ["TRIAGE_DISABLE_THINKING"] = "false"
+    try:
+        s = Settings()
+        assert s.triage_timeout_s == 45.0
+        assert s.triage_disable_thinking is False
+    finally:
+        for key in ("TRIAGE_TIMEOUT_S", "TRIAGE_DISABLE_THINKING"):
+            os.environ.pop(key, None)
+
+
+def test_failed_call_keeps_its_meta():
+    """The first real run recorded only a string for every failure, losing the
+    attempt count and latency. TriageCallFailed carries the meta instead."""
+    from ach_platform.triage import TriageCallFailed
+
+    meta = {"attempts": 1, "latencies_s": [180.0], "errors": ["Timeout"]}
+    exc = TriageCallFailed("Connection timed out", meta)
+    assert exc.meta["attempts"] == 1
+    assert exc.meta["latencies_s"] == [180.0]

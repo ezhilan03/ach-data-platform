@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
@@ -208,6 +209,15 @@ def rules_triage(c: AnomalyCluster) -> TriageResult:
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
+class TriageCallFailed(RuntimeError):
+    """The model could not be reached or did not answer. Carries the meta so the
+    run record keeps attempt counts and latencies instead of just a string."""
+
+    def __init__(self, message: str, meta: dict):
+        super().__init__(message)
+        self.meta = meta
+
+
 def extract_json(text: str) -> dict:
     """Tolerant JSON extraction: strips reasoning tags and code fences, then takes
     the outermost {...}. Raises ValueError if nothing parseable is there."""
@@ -226,15 +236,18 @@ def _complete(messages: list[dict], settings: Settings) -> str:
         "model": settings.triage_model,
         "messages": messages,
         "temperature": 0,
-        "timeout": 180,
+        "timeout": settings.triage_timeout_s,
     }
     if settings.triage_model.startswith(("ollama/", "ollama_chat/")):
         kwargs["api_base"] = settings.ollama_api_base
-    try:
-        resp = litellm.completion(**kwargs, response_format={"type": "json_object"})
-    except Exception:
-        # Not every provider/model accepts response_format; the prompt already
-        # demands JSON, so fall back to a plain completion.
+    if settings.triage_use_json_format:
+        try:
+            resp = litellm.completion(**kwargs, response_format={"type": "json_object"})
+        except Exception:
+            # Not every provider/model accepts response_format; the prompt already
+            # demands JSON, so fall back to a plain completion.
+            resp = litellm.completion(**kwargs)
+    else:
         resp = litellm.completion(**kwargs)
     choice = resp.choices[0]
     if getattr(choice, "finish_reason", None) == "length":
@@ -244,15 +257,35 @@ def _complete(messages: list[dict], settings: Settings) -> str:
 
 def llm_triage(evidence: dict, settings: Settings, max_attempts: int = 2) -> tuple[TriageResult, dict]:
     """Returns (result, meta). meta records attempts and raw text for the eval log."""
+    user_content = "Evidence packet:\n" + json.dumps(evidence, indent=2)
+    if settings.triage_disable_thinking:
+        user_content += "\n\n/no_think"
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": "Evidence packet:\n" + json.dumps(evidence, indent=2)},
+        {"role": "user", "content": user_content},
     ]
-    meta: dict = {"model": settings.triage_model, "attempts": 0, "errors": []}
+    meta: dict = {
+        "model": settings.triage_model,
+        "attempts": 0,
+        "errors": [],
+        "thinking_disabled": settings.triage_disable_thinking,
+        "timeout_s": settings.triage_timeout_s,
+    }
     last_error: Exception | None = None
     for _ in range(max_attempts):
         meta["attempts"] += 1
-        raw = _complete(messages, settings)
+        started = time.monotonic()
+        try:
+            raw = _complete(messages, settings)
+        except Exception as exc:
+            # A transport failure (timeout, connection refused) is as much a
+            # result as a malformed one, and the meta that records it must
+            # survive -- the first real run lost every attempt count because
+            # this propagated straight out.
+            meta.setdefault("latencies_s", []).append(round(time.monotonic() - started, 1))
+            meta["errors"].append(f"{type(exc).__name__}: {exc}"[:500])
+            raise TriageCallFailed(str(exc)[:500], meta) from exc
+        meta.setdefault("latencies_s", []).append(round(time.monotonic() - started, 1))
         meta["raw"] = raw
         try:
             result = TriageResult.model_validate(extract_json(raw))
@@ -311,8 +344,19 @@ def triage_clusters(clusters: list[AnomalyCluster], settings: Settings, use_llm:
             try:
                 result, meta = llm_triage(evidence, settings)
                 record["llm"], record["llm_meta"] = result.model_dump(), meta
+                print(
+                    f"  [{len(records) + 1}/{len(clusters)}] {c.company_id} -> {result.incident_type} "
+                    f"({meta.get('latencies_s')}s)",
+                    flush=True,
+                )
             except Exception as exc:  # keep going; the eval reports failures explicitly
-                record["llm_meta"] = {"error": str(exc)[:500]}
+                meta = getattr(exc, "meta", None) or {}
+                record["llm_meta"] = {**meta, "error": str(exc)[:500]}
+                print(
+                    f"  [{len(records) + 1}/{len(clusters)}] {c.company_id} -> FAILED: "
+                    f"{type(exc).__name__} after {meta.get('latencies_s')}s",
+                    flush=True,
+                )
         records.append(record)
 
     settings.runs_dir.mkdir(parents=True, exist_ok=True)
