@@ -212,3 +212,40 @@ def test_dashboards_use_the_provisioned_datasource_uid():
             if panel["type"] == "row":
                 continue
             assert panel["datasource"]["uid"] == uid, f"{f.name}:{panel['title']} points at a different datasource"
+
+
+def test_statsd_mapping_matches_the_exporter_schema():
+    """statsd_exporter validates its config at startup and exits if it is wrong.
+    The container then crash-loops, Prometheus has no Airflow target, and every
+    pipeline-health panel reads "No data" -- which is indistinguishable from a
+    healthy system with nothing to report. That is exactly what shipped: the
+    first stack bring-up had `quantiles` at the wrong level and a `timer_type`
+    key the exporter does not accept.
+    """
+    mapping = yaml.safe_load(STATSD_MAPPING.read_text())
+
+    defaults = mapping.get("defaults", {})
+    assert "quantiles" not in defaults, "quantiles belongs under summary_options, not defaults"
+    assert "timer_type" not in defaults, "timer_type is not accepted; use observer_type"
+    allowed_defaults = {
+        "observer_type",
+        "match_type",
+        "glob_disable_ordering",
+        "ttl",
+        "summary_options",
+        "histogram_options",
+    }
+    unknown = set(defaults) - allowed_defaults
+    assert not unknown, f"unknown keys under defaults: {sorted(unknown)}"
+    if defaults.get("observer_type") == "summary":
+        assert "quantiles" in defaults.get("summary_options", {}), "summary defaults need summary_options.quantiles"
+
+    for rule in mapping.get("mappings", []):
+        assert "match" in rule and "name" in rule, f"rule missing match/name: {rule}"
+        assert "quantiles" not in rule, f"{rule['name']}: quantiles belongs under summary_options"
+        assert "timer_type" not in rule, f"{rule['name']}: timer_type is not accepted"
+        if rule.get("observer_type") == "histogram":
+            assert "buckets" in rule.get("histogram_options", {}), (
+                f"{rule['name']}: histogram needs histogram_options.buckets"
+            )
+        assert "buckets" not in rule, f"{rule['name']}: buckets belongs under histogram_options"

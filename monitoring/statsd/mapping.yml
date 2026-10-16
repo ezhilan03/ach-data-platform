@@ -13,16 +13,21 @@
 # `ach_*_seconds` semantics consistent across the two dashboards.
 
 defaults:
+  # `quantiles` belongs under `summary_options`, not here, and `timer_type` is
+  # not a key current versions accept. Both were wrong, statsd_exporter v0.31
+  # rejected the config at startup, and the container crash-looped -- which
+  # showed up only as an empty pipeline-health dashboard, since a Prometheus
+  # target that never comes up looks exactly like one with nothing to report.
   observer_type: summary
-  timer_type: summary
   match_type: glob
-  quantiles:
-    - quantile: 0.5
-      error: 0.01
-    - quantile: 0.9
-      error: 0.01
-    - quantile: 0.99
-      error: 0.001
+  summary_options:
+    quantiles:
+      - quantile: 0.5
+        error: 0.01
+      - quantile: 0.9
+        error: 0.01
+      - quantile: 0.99
+        error: 0.001
 
 mappings:
   # --- timers we chart as histograms ---------------------------------------

@@ -34,7 +34,10 @@ def main(dags_dir: str) -> int:
     os.environ.setdefault("AIRFLOW__CORE__DAGS_FOLDER", str(root))
     os.environ.setdefault("AIRFLOW__CORE__LOAD_EXAMPLES", "False")
 
-    from airflow.models.dagbag import DagBag
+    try:
+        from airflow.dag_processing.dagbag import DagBag
+    except ImportError:  # Airflow < 3.3
+        from airflow.models.dagbag import DagBag
 
     bag = DagBag(str(root))
 
