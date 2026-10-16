@@ -80,9 +80,9 @@ number drops below the floor committed in
 | Day-level F1 | **0.72** | tp=17, fp=2, fn=11 |
 | Mean detection delay | **0.22 days** | Incident start to first flag |
 | Triage accuracy — rules baseline | **1.00 (n=9)** | Baseline, *given* the detector signal |
-| Triage accuracy — LLM (`ollama_chat/qwen3:4b`) | **1.00 (n=3)** | Model, from the evidence packet alone |
-| LLM — correctly called a false positive noise | **0.00 (0/0)** | What the rules baseline structurally cannot do |
-| LLM calls with no usable result | **8** | Timeout or schema failure after one retry |
+| Triage accuracy — LLM (`ollama_chat/qwen3:4b`) | **0.62 (n=8)** | Model, from the evidence packet alone |
+| LLM — correctly called a false positive noise | **0.00 (0/2)** | What the rules baseline structurally cannot do |
+| LLM calls with no usable result | **1** | Timeout or schema failure after one retry |
 
 Recall by incident type: `admin_return_spike` 0.50, `duplicate_file` 1.00, `nsf_spike` 1.00, `settlement_delay` 1.00, `unauthorized_return_spike` 1.00, `volume_drop` 1.00
 <!-- eval:end -->
@@ -107,12 +107,20 @@ six-line lookup from detector signal to incident type, and it is handed the
 signal for free. It is the bar the model has to clear, and the model is
 deliberately not told which signal fired (enforced by a test, not by intention).
 
-**The rules baseline also has a weakness the number hides.** On the 2
-false-positive clusters it answered "no_incident" 0 times — it *cannot*, since
-a signal fired by definition. That is precisely where a model reading the raw
-evidence can add something a lookup table never will, and the harness reports
-`no_incident_rate_on_fp_clusters` separately so that capability is measurable
-rather than assumed.
+**The rules baseline has a weakness the number hides — and the model did not
+fix it.** On the 2 false-positive clusters the lookup answered "no_incident" 0
+times, because it *cannot*: a signal fired by definition. That was the clearest
+place for a model reading raw evidence to add something. Measured, it answered
+"no_incident" 0 times too, calling both `nsf_spike`.
+
+**So the LLM step, as configured, does not earn its place.** It scores 0.62
+against the baseline's 1.00, fails the one thing the baseline structurally
+cannot do, and costs 7.6 minutes of local inference per cluster. Five of its
+ten predictions were `nsf_spike`, including a volume drop, a settlement delay
+and both false positives — it collapses toward one label under uncertainty.
+[ADR-0007](docs/adr/0007-llm-triage-with-a-rules-baseline.md) committed in
+advance to what to do if this happened, and records what the measurement
+actually showed.
 
 **The first version of the detector measured P=0.10.**
 [ADR-0005](docs/adr/0005-poisson-surprise-over-z-score.md) is the whole story:

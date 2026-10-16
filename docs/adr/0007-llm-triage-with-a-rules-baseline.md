@@ -70,6 +70,52 @@ once with the validation error in the prompt. `finish_reason == "length"` is
 treated as a failure rather than parsed — a truncated response that happens to
 contain valid JSON is not a valid answer.
 
+## Measured outcome (2026-10-06)
+
+`ollama_chat/qwen3:4b`, local, on an M4 Air. 11 clusters, 10 usable results,
+76 minutes of model time.
+
+| | rules baseline | LLM |
+| --- | --- | --- |
+| Accuracy on true incidents | **1.00** (9/9) | **0.62** (5/8) |
+| Called a false positive "no_incident" | 0 / 2 (cannot) | **0 / 2** |
+| Calls with no usable result | 0 | 1 |
+| Cost per cluster | microseconds | ~7.6 min |
+
+The model lost on the comparison it was given a fair shot at, and tied — at
+zero — on the one the baseline was structurally incapable of. It collapsed
+toward a single label: five of ten predictions were `nsf_spike`, including a
+volume drop, a settlement delay, and both false-positive clusters.
+
+Two mechanical findings worth keeping:
+
+**Every successful call took two attempts.** The first response failed pydantic
+validation every single time; the retry carrying the validation error
+succeeded every single time. A schema-validated retry loop was not a safety
+net here, it was load-bearing.
+
+**Disabling the reasoning trace may have cost accuracy.** An earlier partial
+run with thinking enabled got 3 of 3 correct, including a `volume_drop` that
+this run — same cluster, `/no_think` set — called `nsf_spike`. n=3 against
+n=8 is far too small to conclude from, but it is the obvious next thing to
+measure, and the switch is now `TRIAGE_DISABLE_THINKING` rather than a patch.
+
+### What this means for the pipeline
+
+The decision this ADR pre-committed to is now live: **this step should ship as
+the rules classification plus a templated summary**, with the model behind a
+flag and off by default for the local deployment. The architecture does not
+change — the evidence packet, the schema, the retry loop and the eval all stay,
+because they are what made the negative result legible. What changes is the
+default, and the README now says so in numbers rather than in hope.
+
+The result is model-and-hardware specific, not a claim about LLM triage in
+general. A hosted frontier model on the same packets may well clear the bar;
+the harness is sitting there to find out, and the provider is one environment
+variable. What has been measured is narrower and more useful than a verdict:
+*a 4B local model on consumer hardware cannot do this job*, which is exactly
+the claim the "nothing leaves the machine" selling point depends on.
+
 ## Consequences
 
 - Triage quality depends on the model; the number is reported per model in the
