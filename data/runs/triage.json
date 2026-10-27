@@ -1,0 +1,1702 @@
+{
+  "model": "ollama_chat/qwen3:4b",
+  "records": [
+    {
+      "cluster": {
+        "cluster_id": "ORIG0004:2026-08-07",
+        "company_id": "ORIG0004",
+        "start_date": "2026-08-07",
+        "end_date": "2026-08-07",
+        "signals": {
+          "volume_drop": 1
+        },
+        "dominant_signal": "volume_drop",
+        "anomalies": [
+          {
+            "company_id": "ORIG0004",
+            "day": "2026-08-07",
+            "signal": "volume_drop",
+            "observed": 19.0,
+            "baseline": 191.07142857142858,
+            "score": 0.0994392523364486,
+            "detail": "19 entries vs baseline 191 (10%)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0004",
+          "company_name": "Consumer Lending Co 04",
+          "industry": "consumer_lending",
+          "primary_sec_code": "WEB",
+          "base_daily_volume": 190,
+          "lifetime_return_rate": 0.04088
+        },
+        "window": {
+          "start": "2026-08-07",
+          "end": "2026-08-07",
+          "days_flagged": 1
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-07",
+            "entry_count": 19,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.0,
+            "overall_return_rate": 0.0,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 191.07143,
+            "baseline_unauthorized_return_rate": 0.00225,
+            "baseline_admin_return_rate": 0.00218,
+            "baseline_nsf_return_rate": 0.03881,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 197.7,
+          "avg_unauthorized_return_rate": 0.00251,
+          "avg_admin_return_rate": 0.00252,
+          "avg_nsf_return_rate": 0.04059,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 35
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 24
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 3
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 2
+          },
+          {
+            "code": "R08",
+            "description": "Payment stopped",
+            "count": 2
+          },
+          {
+            "code": "R10",
+            "description": "Customer advises originator not known / not authorized",
+            "count": 2
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "volume_drop",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'volume_drop' over 1 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "19 entries vs baseline 191 (10%)"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The originator processed 19 entries on 2026-08-07 with 59 NSF returns (R01: 35, R09: 24), significantly exceeding the prior average NSF return rate of 4.06% (0.04059). This spike indicates a temporary issue with customer account balances or payment timing, likely due to recent account closures or delayed fund availability.",
+        "recommended_action": "Verify the originator's customer file for recent account closures or payment delays. Re-run the file submission with updated account balances to reduce NSF returns. Monitor the next 24 hours for resolution in return rates.",
+        "evidence_cited": [
+          "R01: 35",
+          "R09: 24",
+          "entry_count: 19",
+          "baseline_entry_count: 191.07",
+          "avg_nsf_return_rate: 0.04059",
+          "total_nsf_returns: 59"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "4 validation errors for TriageResult\nincident_type\n  Field required [type=missing, input_value={'answer': 'nsf_spike', '... spike in NSF returns.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nseverity\n  Field required [type=missing, input_value={'answer': 'nsf_spike', '... spike in NSF returns.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, in"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          495.4,
+          360.3
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The originator processed 19 entries on 2026-08-07 with 59 NSF returns (R01: 35, R09: 24), significantly exceeding the prior average NSF return rate of 4.06% (0.04059). This spike indicates a temporary issue with customer account balances or payment timing, likely due to recent account closures or delayed fund availability.\",\n  \"recommended_action\": \"Verify the originator's customer file for recent account closures or payment delays. Re-run the file submission with updated account balances to reduce NSF returns. Monitor the next 24 hours for resolution in return rates.\",\n  \"evidence_cited\": [\n    \"R01: 35\",\n    \"R09: 24\",\n    \"entry_count: 19\",\n    \"baseline_entry_count: 191.07\",\n    \"avg_nsf_return_rate: 0.04059\",\n    \"total_nsf_returns: 59\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0005:2026-08-10",
+        "company_id": "ORIG0005",
+        "start_date": "2026-08-10",
+        "end_date": "2026-08-12",
+        "signals": {
+          "nsf_rate": 3
+        },
+        "dominant_signal": "nsf_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0005",
+            "day": "2026-08-10",
+            "signal": "nsf_rate",
+            "observed": 0.0603448275862069,
+            "baseline": 0.01265634306134604,
+            "score": 5.573370106808141,
+            "detail": "14 returns on 232 entries (6.03%) vs baseline 1.27% (expected 2.9; p=2.7e-06)"
+          },
+          {
+            "company_id": "ORIG0005",
+            "day": "2026-08-11",
+            "signal": "nsf_rate",
+            "observed": 0.08968609865470852,
+            "baseline": 0.015726043503821282,
+            "score": 8.932079950650909,
+            "detail": "20 returns on 223 entries (8.97%) vs baseline 1.57% (expected 3.5; p=1.2e-09)"
+          },
+          {
+            "company_id": "ORIG0005",
+            "day": "2026-08-12",
+            "signal": "nsf_rate",
+            "observed": 0.06372549019607843,
+            "baseline": 0.019476657746060066,
+            "score": 3.5900641283753467,
+            "detail": "13 returns on 204 entries (6.37%) vs baseline 1.95% (expected 4.0; p=2.6e-04)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0005",
+          "company_name": "Insurance Co 05",
+          "industry": "insurance",
+          "primary_sec_code": "PPD",
+          "base_daily_volume": 193,
+          "lifetime_return_rate": 0.02508
+        },
+        "window": {
+          "start": "2026-08-10",
+          "end": "2026-08-12",
+          "days_flagged": 3
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-10",
+            "entry_count": 232,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.00862,
+            "nsf_return_rate": 0.06034,
+            "overall_return_rate": 0.06897,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 204.14286,
+            "baseline_unauthorized_return_rate": 0.0,
+            "baseline_admin_return_rate": 0.00698,
+            "baseline_nsf_return_rate": 0.01423,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-08-11",
+            "entry_count": 223,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.00448,
+            "nsf_return_rate": 0.08969,
+            "overall_return_rate": 0.09417,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 207.28571,
+            "baseline_unauthorized_return_rate": 0.0,
+            "baseline_admin_return_rate": 0.0076,
+            "baseline_nsf_return_rate": 0.0174,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-08-12",
+            "entry_count": 204,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.06373,
+            "overall_return_rate": 0.06373,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 204.5,
+            "baseline_unauthorized_return_rate": 0.0,
+            "baseline_admin_return_rate": 0.00765,
+            "baseline_nsf_return_rate": 0.02162,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 201.9,
+          "avg_unauthorized_return_rate": 0.0,
+          "avg_admin_return_rate": 0.00835,
+          "avg_nsf_return_rate": 0.01318,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 48
+          },
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 37
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 7
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 6
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 4
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "nsf_spike",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'nsf_rate' over 3 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "14 returns on 232 entries (6.03%) vs baseline 1.27% (expected 2.9; p=2.7e-06)",
+          "20 returns on 223 entries (8.97%) vs baseline 1.57% (expected 3.5; p=1.2e-09)",
+          "13 returns on 204 entries (6.37%) vs baseline 1.95% (expected 4.0; p=2.6e-04)"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The nsf_return_rate surged from baseline 1.318% to 6.373% over three days, driven by 37 R01 (insufficient funds) and 48 R09 (uncollected funds) returns. This spike indicates beneficiary accounts may be inactive or payment timing has shifted, common in insurance claims processing where beneficiaries' accounts are inactive during claim periods.",
+        "recommended_action": "Immediately investigate beneficiary account statuses and payment timing patterns to identify seasonal trends or process changes. Verify if claims are processed during inactive account periods or if debit timing has shifted, as this could delay insurance payments.",
+        "evidence_cited": [
+          "nsf_return_rate: 6.373%",
+          "baseline_nsf_return_rate: 0.01318%",
+          "R01 count: 37",
+          "R09 count: 48",
+          "entry_count: 204"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "4 validation errors for TriageResult\nincident_type\n  Field required [type=missing, input_value={'Incident Type': 'nsf_sp...it timing has shifted.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nseverity\n  Field required [type=missing, input_value={'Incident Type': 'nsf_sp...it timing has shifted.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, in"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          532.9,
+          365.2
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The nsf_return_rate surged from baseline 1.318% to 6.373% over three days, driven by 37 R01 (insufficient funds) and 48 R09 (uncollected funds) returns. This spike indicates beneficiary accounts may be inactive or payment timing has shifted, common in insurance claims processing where beneficiaries' accounts are inactive during claim periods.\",\n  \"recommended_action\": \"Immediately investigate beneficiary account statuses and payment timing patterns to identify seasonal trends or process changes. Verify if claims are processed during inactive account periods or if debit timing has shifted, as this could delay insurance payments.\",\n  \"evidence_cited\": [\n    \"nsf_return_rate: 6.373%\",\n    \"baseline_nsf_return_rate: 0.01318%\",\n    \"R01 count: 37\",\n    \"R09 count: 48\",\n    \"entry_count: 204\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0006:2026-08-06",
+        "company_id": "ORIG0006",
+        "start_date": "2026-08-06",
+        "end_date": "2026-08-06",
+        "signals": {
+          "duplicate_ratio": 1
+        },
+        "dominant_signal": "duplicate_ratio",
+        "anomalies": [
+          {
+            "company_id": "ORIG0006",
+            "day": "2026-08-06",
+            "signal": "duplicate_ratio",
+            "observed": 1.0,
+            "baseline": 0.0,
+            "score": 1.0,
+            "detail": "100% of entries are duplicate submissions (2 files)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0006",
+          "company_name": "B2B Supplier Co 06",
+          "industry": "b2b_supplier",
+          "primary_sec_code": "CCD",
+          "base_daily_volume": 58,
+          "lifetime_return_rate": 0.01221
+        },
+        "window": {
+          "start": "2026-08-06",
+          "end": "2026-08-06",
+          "days_flagged": 1
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-06",
+            "entry_count": 142,
+            "file_count": 2,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.01408,
+            "overall_return_rate": 0.02113,
+            "duplicate_ratio": 1.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 63.71429,
+            "baseline_unauthorized_return_rate": 0.0,
+            "baseline_admin_return_rate": 0.01004,
+            "baseline_nsf_return_rate": 0.00212,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 62.8,
+          "avg_unauthorized_return_rate": 0.0,
+          "avg_admin_return_rate": 0.006,
+          "avg_nsf_return_rate": 0.00297,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 3
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 3
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 1
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 1
+          },
+          {
+            "code": "R20",
+            "description": "Non-transaction account",
+            "count": 1
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "duplicate_file",
+        "severity": "high",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'duplicate_ratio' over 1 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "100% of entries are duplicate submissions (2 files)"
+        ]
+      },
+      "llm": {
+        "incident_type": "duplicate_file",
+        "severity": "high",
+        "root_cause_hypothesis": "The originator submitted two files on the same effective date (2026-08-06), resulting in 100% duplicate entries (duplicate_ratio: 1.0). This is consistent with the definition of duplicate_file, where the same entries appear more than once on the same effective date. The file_count of 2 confirms two submissions from the originator that day.",
+        "recommended_action": "The ODFI should immediately verify the originator's file submission process to identify if the second file was a resubmission. Correct the file submission to ensure only one file is processed per effective date. Monitor the originator's next submission to confirm resolution and prevent recurrence.",
+        "evidence_cited": [
+          "duplicate_ratio: 1.0",
+          "file_count: 2",
+          "entry_count: 142",
+          "baseline_entry_count: 63.71429"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "2 validation errors for TriageResult\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'duplic....0 and file_count: 2).'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_action\n  Field required [type=missing, input_value={'incident_type': 'duplic....0 and file_count: 2).'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          392.9,
+          198.7
+        ],
+        "raw": "{\n  \"incident_type\": \"duplicate_file\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The originator submitted two files on the same effective date (2026-08-06), resulting in 100% duplicate entries (duplicate_ratio: 1.0). This is consistent with the definition of duplicate_file, where the same entries appear more than once on the same effective date. The file_count of 2 confirms two submissions from the originator that day.\",\n  \"recommended_action\": \"The ODFI should immediately verify the originator's file submission process to identify if the second file was a resubmission. Correct the file submission to ensure only one file is processed per effective date. Monitor the originator's next submission to confirm resolution and prevent recurrence.\",\n  \"evidence_cited\": [\n    \"duplicate_ratio: 1.0\",\n    \"file_count: 2\",\n    \"entry_count: 142\",\n    \"baseline_entry_count: 63.71429\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0007:2026-08-10",
+        "company_id": "ORIG0007",
+        "start_date": "2026-08-10",
+        "end_date": "2026-08-11",
+        "signals": {
+          "settlement_lag": 2
+        },
+        "dominant_signal": "settlement_lag",
+        "anomalies": [
+          {
+            "company_id": "ORIG0007",
+            "day": "2026-08-10",
+            "signal": "settlement_lag",
+            "observed": 3.0,
+            "baseline": 1.0,
+            "score": 2.0,
+            "detail": "avg settlement lag 3.0 banking days vs baseline 1.0"
+          },
+          {
+            "company_id": "ORIG0007",
+            "day": "2026-08-11",
+            "signal": "settlement_lag",
+            "observed": 3.0,
+            "baseline": 1.1428571428571428,
+            "score": 1.8571428571428572,
+            "detail": "avg settlement lag 3.0 banking days vs baseline 1.1"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0007",
+          "company_name": "Fitness Co 07",
+          "industry": "fitness",
+          "primary_sec_code": "PPD",
+          "base_daily_volume": 155,
+          "lifetime_return_rate": 0.03394
+        },
+        "window": {
+          "start": "2026-08-10",
+          "end": "2026-08-11",
+          "days_flagged": 2
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-10",
+            "entry_count": 188,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.01064,
+            "nsf_return_rate": 0.01596,
+            "overall_return_rate": 0.0266,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 3.0,
+            "baseline_entry_count": 166.5,
+            "baseline_unauthorized_return_rate": 0.00191,
+            "baseline_admin_return_rate": 0.00712,
+            "baseline_nsf_return_rate": 0.02897,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-08-11",
+            "entry_count": 200,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.015,
+            "nsf_return_rate": 0.015,
+            "overall_return_rate": 0.04,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 3.0,
+            "baseline_entry_count": 168.35714,
+            "baseline_unauthorized_return_rate": 0.00191,
+            "baseline_admin_return_rate": 0.00788,
+            "baseline_nsf_return_rate": 0.02703,
+            "baseline_settlement_lag_days": 1.14286
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 174.8,
+          "avg_unauthorized_return_rate": 0.00194,
+          "avg_admin_return_rate": 0.00749,
+          "avg_nsf_return_rate": 0.02615,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 23
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 23
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 8
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 4
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 4
+          },
+          {
+            "code": "R10",
+            "description": "Customer advises originator not known / not authorized",
+            "count": 3
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "settlement_delay",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'settlement_lag' over 2 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "avg settlement lag 3.0 banking days vs baseline 1.0",
+          "avg settlement lag 3.0 banking days vs baseline 1.1"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "medium",
+        "root_cause_hypothesis": "The nsf return rate (R01 and R09) has spiked from 2.615% (baseline) to 11.85% in the two-day window, indicating a temporary issue with customer payment timing or account status. This spike is not driven by unauthorized returns (R05/R07/R10/R11/R29 = 0) or administrative returns (R02/R03/R04 = 0.015% and 0.015% respectively). The originator's fitness industry may experience seasonal payment delays, but the magnitude of the spike suggests a recent operational change.",
+        "recommended_action": "The ODFI should immediately review the originator's customer file for recent changes in payment timing or account status. Contact the originator to verify if there's a temporary issue with their payment processing system, such as delayed customer payments. Monitor the nsf return rate for the next 7 days to confirm if the spike is temporary or indicative of a persistent problem.",
+        "evidence_cited": [
+          "R01: 23",
+          "R09: 23",
+          "overall_return_rate: 0.04",
+          "baseline_nsf_return_rate: 0.02615",
+          "entry_count: 388",
+          "nsf_return_rate: 0.1185"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "4 validation errors for TriageResult\nincident_type\n  Field required [type=missing, input_value={'answer': 'nsf_spike', '...ike type is nsf_spike.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nseverity\n  Field required [type=missing, input_value={'answer': 'nsf_spike', '...ike type is nsf_spike.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, in"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          289.4,
+          116.3
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"medium\",\n  \"root_cause_hypothesis\": \"The nsf return rate (R01 and R09) has spiked from 2.615% (baseline) to 11.85% in the two-day window, indicating a temporary issue with customer payment timing or account status. This spike is not driven by unauthorized returns (R05/R07/R10/R11/R29 = 0) or administrative returns (R02/R03/R04 = 0.015% and 0.015% respectively). The originator's fitness industry may experience seasonal payment delays, but the magnitude of the spike suggests a recent operational change.\",\n  \"recommended_action\": \"The ODFI should immediately review the originator's customer file for recent changes in payment timing or account status. Contact the originator to verify if there's a temporary issue with their payment processing system, such as delayed customer payments. Monitor the nsf return rate for the next 7 days to confirm if the spike is temporary or indicative of a persistent problem.\",\n  \"evidence_cited\": [\n    \"R01: 23\",\n    \"R09: 23\",\n    \"overall_return_rate: 0.04\",\n    \"baseline_nsf_return_rate: 0.02615\",\n    \"entry_count: 388\",\n    \"nsf_return_rate: 0.1185\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0008:2026-07-22",
+        "company_id": "ORIG0008",
+        "start_date": "2026-07-22",
+        "end_date": "2026-07-24",
+        "signals": {
+          "admin_rate": 2
+        },
+        "dominant_signal": "admin_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0008",
+            "day": "2026-07-22",
+            "signal": "admin_rate",
+            "observed": 0.05555555555555555,
+            "baseline": 0.005399568034557235,
+            "score": 3.1556224967554924,
+            "detail": "4 returns on 72 entries (5.56%) vs baseline 0.54% (expected 0.4; p=7.0e-04)"
+          },
+          {
+            "company_id": "ORIG0008",
+            "day": "2026-07-24",
+            "signal": "admin_rate",
+            "observed": 0.06097560975609756,
+            "baseline": 0.006690140845070422,
+            "score": 3.58014064841763,
+            "detail": "5 returns on 82 entries (6.10%) vs baseline 0.67% (expected 0.5; p=2.6e-04)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0008",
+          "company_name": "Telecom Collections Co 08",
+          "industry": "telecom_collections",
+          "primary_sec_code": "TEL",
+          "base_daily_volume": 68,
+          "lifetime_return_rate": 0.04493
+        },
+        "window": {
+          "start": "2026-07-22",
+          "end": "2026-07-24",
+          "days_flagged": 2
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-07-22",
+            "entry_count": 72,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.01389,
+            "admin_return_rate": 0.05556,
+            "nsf_return_rate": 0.08333,
+            "overall_return_rate": 0.15278,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 68.38462,
+            "baseline_unauthorized_return_rate": 0.00113,
+            "baseline_admin_return_rate": 0.00743,
+            "baseline_nsf_return_rate": 0.03104,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-23",
+            "entry_count": 66,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.04545,
+            "overall_return_rate": 0.04545,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 68.64286,
+            "baseline_unauthorized_return_rate": 0.00204,
+            "baseline_admin_return_rate": 0.01087,
+            "baseline_nsf_return_rate": 0.03477,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-24",
+            "entry_count": 82,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.06098,
+            "nsf_return_rate": 0.03659,
+            "overall_return_rate": 0.09756,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 65.71429,
+            "baseline_unauthorized_return_rate": 0.00204,
+            "baseline_admin_return_rate": 0.00954,
+            "baseline_nsf_return_rate": 0.03668,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 66.1,
+          "avg_unauthorized_return_rate": 0.00147,
+          "avg_admin_return_rate": 0.00621,
+          "avg_nsf_return_rate": 0.03517,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 19
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 19
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 7
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 5
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 4
+          },
+          {
+            "code": "R11",
+            "description": "Customer advises entry not in accordance with the terms of authorization",
+            "count": 1
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "admin_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'admin_rate' over 2 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "4 returns on 72 entries (5.56%) vs baseline 0.54% (expected 0.4; p=7.0e-04)",
+          "5 returns on 82 entries (6.10%) vs baseline 0.67% (expected 0.5; p=2.6e-04)"
+        ]
+      },
+      "llm": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The unauthorized return rate (R11) spiked to 1.389% on 2026-07-22, significantly exceeding NACHA's 0.5% threshold. This represents a 19x increase from the baseline of 0.113%. The single R11 return (count: 1) suggests a potential authorization error or fraud incident.",
+        "recommended_action": "The ODFI must immediately review the authorization process for the 2026-07-22 file to identify if customer consent was properly captured. They should also verify the originator's system configuration to prevent future unauthorized returns. Contact the originator to confirm the resolution of the R11 return and implement additional validation checks for high-risk transactions.",
+        "evidence_cited": [
+          "1.389%",
+          "1"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "3 validation errors for TriageResult\nseverity\n  Field required [type=missing, input_value={'incident_type': 'unauth...rized return (R011:1).\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'unauth...rized return (R011:1).\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_action\n  Field required [type=missin"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          156.8,
+          78.3
+        ],
+        "raw": "{\n  \"incident_type\": \"unauthorized_return_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The unauthorized return rate (R11) spiked to 1.389% on 2026-07-22, significantly exceeding NACHA's 0.5% threshold. This represents a 19x increase from the baseline of 0.113%. The single R11 return (count: 1) suggests a potential authorization error or fraud incident.\",\n  \"recommended_action\": \"The ODFI must immediately review the authorization process for the 2026-07-22 file to identify if customer consent was properly captured. They should also verify the originator's system configuration to prevent future unauthorized returns. Contact the originator to confirm the resolution of the R11 return and implement additional validation checks for high-risk transactions.\",\n  \"evidence_cited\": [\"1.389%\", \"1\"]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0012:2026-07-24",
+        "company_id": "ORIG0012",
+        "start_date": "2026-07-24",
+        "end_date": "2026-07-24",
+        "signals": {
+          "unauthorized_rate": 1
+        },
+        "dominant_signal": "unauthorized_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0012",
+            "day": "2026-07-24",
+            "signal": "unauthorized_rate",
+            "observed": 0.022058823529411766,
+            "baseline": 0.0005716463414634146,
+            "score": 4.131425621079946,
+            "detail": "3 returns on 136 entries (2.21%) vs baseline 0.06% (expected 0.1; p=7.4e-05)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0012",
+          "company_name": "Consumer Lending Co 12",
+          "industry": "consumer_lending",
+          "primary_sec_code": "WEB",
+          "base_daily_volume": 151,
+          "lifetime_return_rate": 0.04231
+        },
+        "window": {
+          "start": "2026-07-24",
+          "end": "2026-07-24",
+          "days_flagged": 1
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-07-24",
+            "entry_count": 136,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.02206,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.05147,
+            "overall_return_rate": 0.07353,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 151.71429,
+            "baseline_unauthorized_return_rate": 0.00051,
+            "baseline_admin_return_rate": 0.00602,
+            "baseline_nsf_return_rate": 0.0304,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 158.1,
+          "avg_unauthorized_return_rate": 0.0,
+          "avg_admin_return_rate": 0.00706,
+          "avg_nsf_return_rate": 0.02766,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 35
+          },
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 28
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 4
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 4
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 2
+          },
+          {
+            "code": "R10",
+            "description": "Customer advises originator not known / not authorized",
+            "count": 2
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'unauthorized_rate' over 1 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "3 returns on 136 entries (2.21%) vs baseline 0.06% (expected 0.1; p=7.4e-05)"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "medium",
+        "root_cause_hypothesis": "The nsf_return_rate (5.147%) has increased sharply from the prior average of 2.766%, driven by a surge in R01 (insufficient funds) and R09 (uncollected funds) returns. This spike aligns with the definition of nsf_spike, which typically indicates temporary payment delays or changes in debit timing rather than a systemic issue. The absence of unauthorized returns (R05/R07/R10/R11/R29) suggests no authorization problems, but the high nsf rate warrants investigation.",
+        "recommended_action": "The ODFI should immediately review the originator's customer file for recent payment delays and verify if the spike is seasonal. They should also check the timing of debit entries to ensure they align with customer payment cycles. If the spike persists, the originator should be notified to investigate potential issues with their customer onboarding or payment processing.",
+        "evidence_cited": [
+          "nsf_return_rate: 5.147%",
+          "prior_avg_nsf_return_rate: 2.766%",
+          "R01 count: 28",
+          "R09 count: 35",
+          "entry_count: 136",
+          "baseline_entry_count: 151.714"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "3 validation errors for TriageResult\nseverity\n  Field required [type=missing, input_value={'incident_type': 'nsf_sp...he nsf_spike criteria.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'nsf_sp...he nsf_spike criteria.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_action\n  Field required [type=missin"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          214.9,
+          127.1
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"medium\",\n  \"root_cause_hypothesis\": \"The nsf_return_rate (5.147%) has increased sharply from the prior average of 2.766%, driven by a surge in R01 (insufficient funds) and R09 (uncollected funds) returns. This spike aligns with the definition of nsf_spike, which typically indicates temporary payment delays or changes in debit timing rather than a systemic issue. The absence of unauthorized returns (R05/R07/R10/R11/R29) suggests no authorization problems, but the high nsf rate warrants investigation.\",\n  \"recommended_action\": \"The ODFI should immediately review the originator's customer file for recent payment delays and verify if the spike is seasonal. They should also check the timing of debit entries to ensure they align with customer payment cycles. If the spike persists, the originator should be notified to investigate potential issues with their customer onboarding or payment processing.\",\n  \"evidence_cited\": [\n    \"nsf_return_rate: 5.147%\",\n    \"prior_avg_nsf_return_rate: 2.766%\",\n    \"R01 count: 28\",\n    \"R09 count: 35\",\n    \"entry_count: 136\",\n    \"baseline_entry_count: 151.714\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0016:2026-07-30",
+        "company_id": "ORIG0016",
+        "start_date": "2026-07-30",
+        "end_date": "2026-07-31",
+        "signals": {
+          "volume_drop": 2
+        },
+        "dominant_signal": "volume_drop",
+        "anomalies": [
+          {
+            "company_id": "ORIG0016",
+            "day": "2026-07-30",
+            "signal": "volume_drop",
+            "observed": 4.0,
+            "baseline": 79.71428571428571,
+            "score": 0.05017921146953405,
+            "detail": "4 entries vs baseline 80 (5%)"
+          },
+          {
+            "company_id": "ORIG0016",
+            "day": "2026-07-31",
+            "signal": "volume_drop",
+            "observed": 5.0,
+            "baseline": 73.28571428571429,
+            "score": 0.0682261208576998,
+            "detail": "5 entries vs baseline 73 (7%)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0016",
+          "company_name": "Telecom Collections Co 16",
+          "industry": "telecom_collections",
+          "primary_sec_code": "TEL",
+          "base_daily_volume": 73,
+          "lifetime_return_rate": 0.04148
+        },
+        "window": {
+          "start": "2026-07-30",
+          "end": "2026-07-31",
+          "days_flagged": 2
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-07-30",
+            "entry_count": 4,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.0,
+            "overall_return_rate": 0.0,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 79.71429,
+            "baseline_unauthorized_return_rate": 0.00236,
+            "baseline_admin_return_rate": 0.00719,
+            "baseline_nsf_return_rate": 0.02617,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-31",
+            "entry_count": 5,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.0,
+            "overall_return_rate": 0.0,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 73.28571,
+            "baseline_unauthorized_return_rate": 0.0016,
+            "baseline_admin_return_rate": 0.00643,
+            "baseline_nsf_return_rate": 0.02389,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 77.1,
+          "avg_unauthorized_return_rate": 0.00223,
+          "avg_admin_return_rate": 0.009,
+          "avg_nsf_return_rate": 0.02516,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 18
+          },
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 9
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 3
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 2
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 2
+          },
+          {
+            "code": "R11",
+            "description": "Customer advises entry not in accordance with the terms of authorization",
+            "count": 2
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "volume_drop",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'volume_drop' over 2 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "4 entries vs baseline 80 (5%)",
+          "5 entries vs baseline 73 (7%)"
+        ]
+      },
+      "llm": null,
+      "llm_meta": {
+        "error": "triage failed after 2 attempts: 3 validation errors for TriageResult\nseverity\n  Field required [type=missing, input_value={'incident_type': 'volume... daily activity level.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'volume... daily activity level.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_acti"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0017:2026-07-28",
+        "company_id": "ORIG0017",
+        "start_date": "2026-07-28",
+        "end_date": "2026-07-29",
+        "signals": {
+          "unauthorized_rate": 2
+        },
+        "dominant_signal": "unauthorized_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0017",
+            "day": "2026-07-28",
+            "signal": "unauthorized_rate",
+            "observed": 0.04054054054054054,
+            "baseline": 0.001152073732718894,
+            "score": 14.46322807635673,
+            "detail": "12 returns on 296 entries (4.05%) vs baseline 0.12% (expected 0.3; p=3.4e-15)"
+          },
+          {
+            "company_id": "ORIG0017",
+            "day": "2026-07-29",
+            "signal": "unauthorized_rate",
+            "observed": 0.025889967637540454,
+            "baseline": 0.0036261914629092417,
+            "score": 4.639960118605639,
+            "detail": "8 returns on 309 entries (2.59%) vs baseline 0.36% (expected 1.1; p=2.3e-05)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0017",
+          "company_name": "Utilities Co 17",
+          "industry": "utilities",
+          "primary_sec_code": "PPD",
+          "base_daily_volume": 276,
+          "lifetime_return_rate": 0.01953
+        },
+        "window": {
+          "start": "2026-07-28",
+          "end": "2026-07-29",
+          "days_flagged": 2
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-07-28",
+            "entry_count": 296,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.04054,
+            "admin_return_rate": 0.00676,
+            "nsf_return_rate": 0.01351,
+            "overall_return_rate": 0.06419,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 305.28571,
+            "baseline_unauthorized_return_rate": 0.0012,
+            "baseline_admin_return_rate": 0.00512,
+            "baseline_nsf_return_rate": 0.01163,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-29",
+            "entry_count": 309,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.02589,
+            "admin_return_rate": 0.00324,
+            "nsf_return_rate": 0.00971,
+            "overall_return_rate": 0.03883,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 309.0,
+            "baseline_unauthorized_return_rate": 0.0041,
+            "baseline_admin_return_rate": 0.00531,
+            "baseline_nsf_return_rate": 0.01231,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 308.9,
+          "avg_unauthorized_return_rate": 0.00168,
+          "avg_admin_return_rate": 0.00449,
+          "avg_nsf_return_rate": 0.01247,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 24
+          },
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 13
+          },
+          {
+            "code": "R07",
+            "description": "Authorization revoked by customer",
+            "count": 10
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 7
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 6
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 6
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'unauthorized_rate' over 2 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "12 returns on 296 entries (4.05%) vs baseline 0.12% (expected 0.3; p=3.4e-15)",
+          "8 returns on 309 entries (2.59%) vs baseline 0.36% (expected 1.1; p=2.3e-05)"
+        ]
+      },
+      "llm": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "Unauthorized return rate spiked to 4.054% on day 1 (exceeding NACHA's 0.5% threshold) with 10 R07 (authorization revoked) returns observed. This indicates a sharp increase in unauthorized returns compared to baseline of 0.12%, likely caused by system misconfigurations or customer account issues.",
+        "recommended_action": "Immediately investigate the originator's authorization process for R07 returns, as 10 authorization revocations (R07) on day 1 indicate potential customer account misconfigurations. Verify if recent customer account updates or system errors triggered revoked authorizations. Contact the originator to confirm if any customer data changes occurred around the effective entry date.",
+        "evidence_cited": [
+          "Unauthorized return rate: 4.054% (day 1)",
+          "R07 (authorization revoked) returns: 10"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "1 validation error for TriageResult\nrecommended_action\n  Field required [type=missing, input_value={'incident_type': 'unauth... revoked) returns: 10']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          177.3,
+          103.3
+        ],
+        "raw": "{\n  \"incident_type\": \"unauthorized_return_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"Unauthorized return rate spiked to 4.054% on day 1 (exceeding NACHA's 0.5% threshold) with 10 R07 (authorization revoked) returns observed. This indicates a sharp increase in unauthorized returns compared to baseline of 0.12%, likely caused by system misconfigurations or customer account issues.\",\n  \"recommended_action\": \"Immediately investigate the originator's authorization process for R07 returns, as 10 authorization revocations (R07) on day 1 indicate potential customer account misconfigurations. Verify if recent customer account updates or system errors triggered revoked authorizations. Contact the originator to confirm if any customer data changes occurred around the effective entry date.\",\n  \"evidence_cited\": [\n    \"Unauthorized return rate: 4.054% (day 1)\",\n    \"R07 (authorization revoked) returns: 10\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0020:2026-08-06",
+        "company_id": "ORIG0020",
+        "start_date": "2026-08-06",
+        "end_date": "2026-08-06",
+        "signals": {
+          "unauthorized_rate": 1
+        },
+        "dominant_signal": "unauthorized_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0020",
+            "day": "2026-08-06",
+            "signal": "unauthorized_rate",
+            "observed": 0.034482758620689655,
+            "baseline": 0.0009667440061871616,
+            "score": 6.39643053751418,
+            "detail": "5 returns on 145 entries (3.45%) vs baseline 0.10% (expected 0.1; p=4.0e-07)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0020",
+          "company_name": "Consumer Lending Co 20",
+          "industry": "consumer_lending",
+          "primary_sec_code": "WEB",
+          "base_daily_volume": 140,
+          "lifetime_return_rate": 0.04507
+        },
+        "window": {
+          "start": "2026-08-06",
+          "end": "2026-08-06",
+          "days_flagged": 1
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-06",
+            "entry_count": 145,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.03448,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.04828,
+            "overall_return_rate": 0.08966,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 149.0,
+            "baseline_unauthorized_return_rate": 0.00093,
+            "baseline_admin_return_rate": 0.00655,
+            "baseline_nsf_return_rate": 0.04149,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 148.0,
+          "avg_unauthorized_return_rate": 0.00058,
+          "avg_admin_return_rate": 0.0061,
+          "avg_nsf_return_rate": 0.04388,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 32
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 31
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 4
+          },
+          {
+            "code": "R10",
+            "description": "Customer advises originator not known / not authorized",
+            "count": 4
+          },
+          {
+            "code": "R29",
+            "description": "Corporate customer advises not authorized",
+            "count": 3
+          },
+          {
+            "code": "R16",
+            "description": "Account frozen",
+            "count": 2
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'unauthorized_rate' over 1 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "5 returns on 145 entries (3.45%) vs baseline 0.10% (expected 0.1; p=4.0e-07)"
+        ]
+      },
+      "llm": {
+        "incident_type": "unauthorized_return_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The unauthorized return rate spiked to 3.448% on 2026-08-06, significantly exceeding the baseline of 0.093% and the NACHA threshold of 0.5%. This spike is driven by unauthorized return codes R10 (4 occurrences) and R29 (3 occurrences), indicating potential authorization failures or fraud in the originator's processing system. The elevated rate suggests a recent change in authorization protocols or a system misconfiguration affecting customer authorization checks.",
+        "recommended_action": "Immediately review the originator's authorization workflow for R10 and R29 codes to identify if new customer onboarding processes or system errors are causing unauthorized returns. Collaborate with the originator to validate their authorization checks against the NACHA standards and implement real-time monitoring for unauthorized return rates to prevent further spikes. If fraud is suspected, escalate to the NACHA fraud team for further investigation.",
+        "evidence_cited": [
+          "unauthorized_return_rate: 0.03448",
+          "baseline_unauthorized_return_rate: 0.00093",
+          "NACHA threshold: 0.5%",
+          "R10 count: 4",
+          "R29 count: 3",
+          "entry_count: 145",
+          "baseline_entry_count: 149",
+          "nsf_return_rate: 0.04828"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "3 validation errors for TriageResult\nseverity\n  Field required [type=missing, input_value={'incident_type': 'unauth...mary fraud indicator).'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'unauth...mary fraud indicator).'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_action\n  Field required [type=missin"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          196.5,
+          117.2
+        ],
+        "raw": "{\n  \"incident_type\": \"unauthorized_return_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The unauthorized return rate spiked to 3.448% on 2026-08-06, significantly exceeding the baseline of 0.093% and the NACHA threshold of 0.5%. This spike is driven by unauthorized return codes R10 (4 occurrences) and R29 (3 occurrences), indicating potential authorization failures or fraud in the originator's processing system. The elevated rate suggests a recent change in authorization protocols or a system misconfiguration affecting customer authorization checks.\",\n  \"recommended_action\": \"Immediately review the originator's authorization workflow for R10 and R29 codes to identify if new customer onboarding processes or system errors are causing unauthorized returns. Collaborate with the originator to validate their authorization checks against the NACHA standards and implement real-time monitoring for unauthorized return rates to prevent further spikes. If fraud is suspected, escalate to the NACHA fraud team for further investigation.\",\n  \"evidence_cited\": [\n    \"unauthorized_return_rate: 0.03448\",\n    \"baseline_unauthorized_return_rate: 0.00093\",\n    \"NACHA threshold: 0.5%\",\n    \"R10 count: 4\",\n    \"R29 count: 3\",\n    \"entry_count: 145\",\n    \"baseline_entry_count: 149\",\n    \"nsf_return_rate: 0.04828\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0023:2026-07-29",
+        "company_id": "ORIG0023",
+        "start_date": "2026-07-29",
+        "end_date": "2026-07-31",
+        "signals": {
+          "nsf_rate": 3
+        },
+        "dominant_signal": "nsf_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0023",
+            "day": "2026-07-29",
+            "signal": "nsf_rate",
+            "observed": 0.06944444444444445,
+            "baseline": 0.01813346228239845,
+            "score": 3.4108406612858158,
+            "detail": "10 returns on 144 entries (6.94%) vs baseline 1.81% (expected 2.6; p=3.9e-04)"
+          },
+          {
+            "company_id": "ORIG0023",
+            "day": "2026-07-30",
+            "signal": "nsf_rate",
+            "observed": 0.08256880733944955,
+            "baseline": 0.021853986551392892,
+            "score": 3.0869675552803857,
+            "detail": "9 returns on 109 entries (8.26%) vs baseline 2.19% (expected 2.4; p=8.2e-04)"
+          },
+          {
+            "company_id": "ORIG0023",
+            "day": "2026-07-31",
+            "signal": "nsf_rate",
+            "observed": 0.13636363636363635,
+            "baseline": 0.025362318840579712,
+            "score": 7.731323206623734,
+            "detail": "18 returns on 132 entries (13.64%) vs baseline 2.54% (expected 3.3; p=1.9e-08)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0023",
+          "company_name": "Fitness Co 23",
+          "industry": "fitness",
+          "primary_sec_code": "PPD",
+          "base_daily_volume": 109,
+          "lifetime_return_rate": 0.03822
+        },
+        "window": {
+          "start": "2026-07-29",
+          "end": "2026-07-31",
+          "days_flagged": 3
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-07-29",
+            "entry_count": 144,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.00694,
+            "nsf_return_rate": 0.06944,
+            "overall_return_rate": 0.07639,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 112.0,
+            "baseline_unauthorized_return_rate": 0.00262,
+            "baseline_admin_return_rate": 0.00818,
+            "baseline_nsf_return_rate": 0.02311,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-30",
+            "entry_count": 109,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.00917,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.08257,
+            "overall_return_rate": 0.09174,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 113.0,
+            "baseline_unauthorized_return_rate": 0.00262,
+            "baseline_admin_return_rate": 0.00813,
+            "baseline_nsf_return_rate": 0.02698,
+            "baseline_settlement_lag_days": 1.0
+          },
+          {
+            "effective_entry_date": "2026-07-31",
+            "entry_count": 132,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0,
+            "nsf_return_rate": 0.13636,
+            "overall_return_rate": 0.13636,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 112.14286,
+            "baseline_unauthorized_return_rate": 0.00268,
+            "baseline_admin_return_rate": 0.00518,
+            "baseline_nsf_return_rate": 0.03169,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 111.2,
+          "avg_unauthorized_return_rate": 0.00085,
+          "avg_admin_return_rate": 0.00483,
+          "avg_nsf_return_rate": 0.02572,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 38
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 29
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 8
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 4
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 1
+          },
+          {
+            "code": "R07",
+            "description": "Authorization revoked by customer",
+            "count": 1
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "nsf_spike",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'nsf_rate' over 3 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "10 returns on 144 entries (6.94%) vs baseline 1.81% (expected 2.6; p=3.9e-04)",
+          "9 returns on 109 entries (8.26%) vs baseline 2.19% (expected 2.4; p=8.2e-04)",
+          "18 returns on 132 entries (13.64%) vs baseline 2.54% (expected 3.3; p=1.9e-08)"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The originator's NSF return rate surged from 2.572% (prior days) to 13.636% on 2026-07-31, indicating a sharp increase in R01 (insufficient funds) and R09 (uncollected funds) returns. This spike exceeds NACHA's overall return threshold of 0.15% and suggests potential issues with customer account funding or delayed processing. The high volume of R01/R09 returns (38 + 29 = 67) on a single day points to a systemic problem in the originator's file submission or customer data accuracy.",
+        "recommended_action": "Immediately review the originator's file for R01/R09 returns to identify specific customer accounts with insufficient funds. Verify if the spike is due to a temporary funding issue or a file submission error, and contact the originator to confirm if they have resolved the root cause. Monitor the next 24 hours for a recurrence of NSF returns to assess stability.",
+        "evidence_cited": [
+          "nsf_return_rate: 13.636% (2026-07-31)",
+          "R01 count: 38",
+          "R09 count: 29",
+          "baseline_nsf_return_rate: 2.572%",
+          "overall_return_rate: 13.636%",
+          "entry_count: 132 (2026-07-31)"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "3 validation errors for TriageResult\nseverity\n  Field required [type=missing, input_value={'incident_type': 'nsf_sp...t type is 'nsf_spike'.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nroot_cause_hypothesis\n  Field required [type=missing, input_value={'incident_type': 'nsf_sp...t type is 'nsf_spike'.\"}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrecommended_action\n  Field required [type=missin"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          213.5,
+          145.2
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The originator's NSF return rate surged from 2.572% (prior days) to 13.636% on 2026-07-31, indicating a sharp increase in R01 (insufficient funds) and R09 (uncollected funds) returns. This spike exceeds NACHA's overall return threshold of 0.15% and suggests potential issues with customer account funding or delayed processing. The high volume of R01/R09 returns (38 + 29 = 67) on a single day points to a systemic problem in the originator's file submission or customer data accuracy.\",\n  \"recommended_action\": \"Immediately review the originator's file for R01/R09 returns to identify specific customer accounts with insufficient funds. Verify if the spike is due to a temporary funding issue or a file submission error, and contact the originator to confirm if they have resolved the root cause. Monitor the next 24 hours for a recurrence of NSF returns to assess stability.\",\n  \"evidence_cited\": [\n    \"nsf_return_rate: 13.636% (2026-07-31)\",\n    \"R01 count: 38\",\n    \"R09 count: 29\",\n    \"baseline_nsf_return_rate: 2.572%\",\n    \"overall_return_rate: 13.636%\",\n    \"entry_count: 132 (2026-07-31)\"\n  ]\n}"
+      }
+    },
+    {
+      "cluster": {
+        "cluster_id": "ORIG0024:2026-08-17",
+        "company_id": "ORIG0024",
+        "start_date": "2026-08-17",
+        "end_date": "2026-08-17",
+        "signals": {
+          "nsf_rate": 1
+        },
+        "dominant_signal": "nsf_rate",
+        "anomalies": [
+          {
+            "company_id": "ORIG0024",
+            "day": "2026-08-17",
+            "signal": "nsf_rate",
+            "observed": 0.09243697478991597,
+            "baseline": 0.02694018783984182,
+            "score": 3.297006294122039,
+            "detail": "11 returns on 119 entries (9.24%) vs baseline 2.69% (expected 3.2; p=5.0e-04)"
+          }
+        ]
+      },
+      "evidence": {
+        "originator": {
+          "company_id": "ORIG0024",
+          "company_name": "Telecom Collections Co 24",
+          "industry": "telecom_collections",
+          "primary_sec_code": "TEL",
+          "base_daily_volume": 99,
+          "lifetime_return_rate": 0.05563
+        },
+        "window": {
+          "start": "2026-08-17",
+          "end": "2026-08-17",
+          "days_flagged": 1
+        },
+        "flagged_days": [
+          {
+            "effective_entry_date": "2026-08-17",
+            "entry_count": 119,
+            "file_count": 1,
+            "unauthorized_return_rate": 0.0,
+            "admin_return_rate": 0.0084,
+            "nsf_return_rate": 0.09244,
+            "overall_return_rate": 0.10084,
+            "duplicate_ratio": 0.0,
+            "avg_settlement_lag_days": 1.0,
+            "baseline_entry_count": 108.78571,
+            "baseline_unauthorized_return_rate": 0.0044,
+            "baseline_admin_return_rate": 0.01085,
+            "baseline_nsf_return_rate": 0.03577,
+            "baseline_settlement_lag_days": 1.0
+          }
+        ],
+        "prior_days_summary": {
+          "days": 10,
+          "avg_entry_count": 106.9,
+          "avg_unauthorized_return_rate": 0.00543,
+          "avg_admin_return_rate": 0.00844,
+          "avg_nsf_return_rate": 0.03908,
+          "avg_settlement_lag_days": 1.0
+        },
+        "return_codes_arriving_in_window": [
+          {
+            "code": "R01",
+            "description": "Insufficient funds",
+            "count": 35
+          },
+          {
+            "code": "R09",
+            "description": "Uncollected funds",
+            "count": 20
+          },
+          {
+            "code": "R04",
+            "description": "Invalid account number structure",
+            "count": 16
+          },
+          {
+            "code": "R02",
+            "description": "Account closed",
+            "count": 6
+          },
+          {
+            "code": "R05",
+            "description": "Unauthorized debit to consumer account using corporate SEC code",
+            "count": 3
+          },
+          {
+            "code": "R03",
+            "description": "No account / unable to locate account",
+            "count": 2
+          }
+        ],
+        "nacha_thresholds": {
+          "unauthorized": 0.005,
+          "administrative": 0.03,
+          "overall": 0.15
+        }
+      },
+      "rules": {
+        "incident_type": "nsf_spike",
+        "severity": "medium",
+        "root_cause_hypothesis": "Rules baseline: dominant detector signal 'nsf_rate' over 1 flagged day-signals.",
+        "recommended_action": "Rules baseline does not produce an action; see LLM triage.",
+        "evidence_cited": [
+          "11 returns on 119 entries (9.24%) vs baseline 2.69% (expected 3.2; p=5.0e-04)"
+        ]
+      },
+      "llm": {
+        "incident_type": "nsf_spike",
+        "severity": "high",
+        "root_cause_hypothesis": "The nsf_return_rate (9.244%) is 135% higher than the prior-day baseline (3.577%), driven by 35 R01 (insufficient funds) and 20 R09 (uncollected funds) returns. Telecom collections typically depend on timely customer payments, suggesting payment collection failures or delayed customer responses. This spike exceeds NACHA's overall return threshold (0.15%) and indicates active financial risk to the originator.",
+        "recommended_action": "Immediately investigate 55 customers with insufficient funds (R01) and uncollected funds (R09) to resolve payment status. Update payment collection workflows to verify customer payment timelines and implement real-time payment validation checks. Monitor the nsf return rate for 72 hours to confirm whether the spike is temporary or indicative of systemic payment collection issues.",
+        "evidence_cited": [
+          "R01:35",
+          "R09:20",
+          "nsf_return_rate:9.244%",
+          "baseline_nsf_return_rate:3.577%"
+        ]
+      },
+      "llm_meta": {
+        "model": "ollama_chat/qwen3:4b",
+        "attempts": 2,
+        "errors": [
+          "1 validation error for TriageResult\nrecommended_action\n  Field required [type=missing, input_value={'incident_type': 'nsf_sp...sf_return_rate:9.244%']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+        ],
+        "thinking_disabled": true,
+        "timeout_s": 600.0,
+        "latencies_s": [
+          174.7,
+          87.2
+        ],
+        "raw": "{\n  \"incident_type\": \"nsf_spike\",\n  \"severity\": \"high\",\n  \"root_cause_hypothesis\": \"The nsf_return_rate (9.244%) is 135% higher than the prior-day baseline (3.577%), driven by 35 R01 (insufficient funds) and 20 R09 (uncollected funds) returns. Telecom collections typically depend on timely customer payments, suggesting payment collection failures or delayed customer responses. This spike exceeds NACHA's overall return threshold (0.15%) and indicates active financial risk to the originator.\",\n  \"recommended_action\": \"Immediately investigate 55 customers with insufficient funds (R01) and uncollected funds (R09) to resolve payment status. Update payment collection workflows to verify customer payment timelines and implement real-time payment validation checks. Monitor the nsf return rate for 72 hours to confirm whether the spike is temporary or indicative of systemic payment collection issues.\",\n  \"evidence_cited\": [\n    \"R01:35\",\n    \"R09:20\",\n    \"nsf_return_rate:9.244%\",\n    \"baseline_nsf_return_rate:3.577%\"\n  ]\n}"
+      }
+    }
+  ]
+}

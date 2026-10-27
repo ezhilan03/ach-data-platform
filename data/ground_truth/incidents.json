@@ -1,0 +1,109 @@
+{
+  "generator": {
+    "seed": 42,
+    "history_start": "2026-07-03",
+    "history_end": "2026-08-31",
+    "originators": 24,
+    "incidents": 10,
+    "incident_types": [
+      "admin_return_spike",
+      "duplicate_file",
+      "nsf_spike",
+      "settlement_delay",
+      "unauthorized_return_spike",
+      "volume_drop"
+    ]
+  },
+  "incidents": [
+    {
+      "incident_id": "INC008",
+      "company_id": "ORIG0008",
+      "incident_type": "admin_return_spike",
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-24",
+      "magnitude": 0.05663846063353687,
+      "description": "Administrative returns (R02/R03/R04) spike to 5.7% of entries"
+    },
+    {
+      "incident_id": "INC007",
+      "company_id": "ORIG0017",
+      "incident_type": "unauthorized_return_spike",
+      "start_date": "2026-07-28",
+      "end_date": "2026-08-01",
+      "magnitude": 0.023213311676717543,
+      "description": "Unauthorized returns (R05/R07/R10/R11/R29) spike to 2.3% of entries"
+    },
+    {
+      "incident_id": "INC009",
+      "company_id": "ORIG0023",
+      "incident_type": "nsf_spike",
+      "start_date": "2026-07-28",
+      "end_date": "2026-08-01",
+      "magnitude": 0.09826152797678739,
+      "description": "NSF returns (R01/R09) spike to 9.8% of entries"
+    },
+    {
+      "incident_id": "INC010",
+      "company_id": "ORIG0016",
+      "incident_type": "volume_drop",
+      "start_date": "2026-07-30",
+      "end_date": "2026-07-31",
+      "magnitude": 0.9346707644173737,
+      "description": "Originated volume drops by 93% (missed/partial file)"
+    },
+    {
+      "incident_id": "INC002",
+      "company_id": "ORIG0014",
+      "incident_type": "admin_return_spike",
+      "start_date": "2026-08-04",
+      "end_date": "2026-08-08",
+      "magnitude": 0.05570902650556288,
+      "description": "Administrative returns (R02/R03/R04) spike to 5.6% of entries"
+    },
+    {
+      "incident_id": "INC001",
+      "company_id": "ORIG0020",
+      "incident_type": "unauthorized_return_spike",
+      "start_date": "2026-08-06",
+      "end_date": "2026-08-08",
+      "magnitude": 0.03726514408970058,
+      "description": "Unauthorized returns (R05/R07/R10/R11/R29) spike to 3.7% of entries"
+    },
+    {
+      "incident_id": "INC005",
+      "company_id": "ORIG0006",
+      "incident_type": "duplicate_file",
+      "start_date": "2026-08-06",
+      "end_date": "2026-08-06",
+      "magnitude": 1.0,
+      "description": "Day's file submitted twice -- every entry duplicated"
+    },
+    {
+      "incident_id": "INC004",
+      "company_id": "ORIG0004",
+      "incident_type": "volume_drop",
+      "start_date": "2026-08-07",
+      "end_date": "2026-08-09",
+      "magnitude": 0.9169118571145419,
+      "description": "Originated volume drops by 92% (missed/partial file)"
+    },
+    {
+      "incident_id": "INC003",
+      "company_id": "ORIG0005",
+      "incident_type": "nsf_spike",
+      "start_date": "2026-08-10",
+      "end_date": "2026-08-13",
+      "magnitude": 0.08122398746340087,
+      "description": "NSF returns (R01/R09) spike to 8.1% of entries"
+    },
+    {
+      "incident_id": "INC006",
+      "company_id": "ORIG0007",
+      "incident_type": "settlement_delay",
+      "start_date": "2026-08-10",
+      "end_date": "2026-08-11",
+      "magnitude": 2.0,
+      "description": "Settlement lags effective date by an extra 2 banking days"
+    }
+  ]
+}

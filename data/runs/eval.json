@@ -1,0 +1,113 @@
+{
+  "as_of": "2026-08-31",
+  "incidents": 10,
+  "detector_config": {
+    "alpha": 0.001,
+    "min_return_count": 3,
+    "prior_returns": 0.5,
+    "prior_entries": 500.0,
+    "min_baseline_days": 7,
+    "min_entries_for_rate": 30,
+    "return_window_days": 14,
+    "volume_drop_ratio": 0.4,
+    "min_baseline_entries": 40.0,
+    "duplicate_ratio_threshold": 0.2,
+    "settlement_lag_delta_days": 1.0
+  },
+  "detection": {
+    "day_level": {
+      "tp": 17,
+      "fp": 2,
+      "fn": 11,
+      "precision": 0.8947,
+      "recall": 0.6071,
+      "f1": 0.7234
+    },
+    "incident_level": {
+      "incidents": 10,
+      "detected": 9,
+      "recall": 0.9,
+      "clusters": 11,
+      "clusters_overlapping_truth": 9,
+      "precision": 0.8182,
+      "mean_detection_delay_days": 0.22
+    },
+    "recall_by_incident_type": {
+      "admin_return_spike": 0.5,
+      "duplicate_file": 1.0,
+      "nsf_spike": 1.0,
+      "settlement_delay": 1.0,
+      "unauthorized_return_spike": 1.0,
+      "volume_drop": 1.0
+    }
+  },
+  "triage": {
+    "model": "ollama_chat/qwen3:4b",
+    "clusters_evaluated": 11,
+    "rules": {
+      "n": 9,
+      "correct": 9,
+      "no_incident_on_fp": 0,
+      "fp_clusters": 2,
+      "failed": 0,
+      "confusion": {
+        "volume_drop": {
+          "volume_drop": 2
+        },
+        "nsf_spike": {
+          "nsf_spike": 2
+        },
+        "duplicate_file": {
+          "duplicate_file": 1
+        },
+        "settlement_delay": {
+          "settlement_delay": 1
+        },
+        "admin_return_spike": {
+          "admin_return_spike": 1
+        },
+        "no_incident": {
+          "unauthorized_return_spike": 1,
+          "nsf_spike": 1
+        },
+        "unauthorized_return_spike": {
+          "unauthorized_return_spike": 2
+        }
+      },
+      "accuracy_on_true_incidents": 1.0,
+      "no_incident_rate_on_fp_clusters": 0.0
+    },
+    "llm": {
+      "n": 8,
+      "correct": 5,
+      "no_incident_on_fp": 0,
+      "fp_clusters": 2,
+      "failed": 1,
+      "confusion": {
+        "volume_drop": {
+          "nsf_spike": 1
+        },
+        "nsf_spike": {
+          "nsf_spike": 2
+        },
+        "duplicate_file": {
+          "duplicate_file": 1
+        },
+        "settlement_delay": {
+          "nsf_spike": 1
+        },
+        "admin_return_spike": {
+          "unauthorized_return_spike": 1
+        },
+        "no_incident": {
+          "nsf_spike": 2
+        },
+        "unauthorized_return_spike": {
+          "unauthorized_return_spike": 2
+        }
+      },
+      "accuracy_on_true_incidents": 0.625,
+      "no_incident_rate_on_fp_clusters": 0.0
+    }
+  }
+}

@@ -1,0 +1,322 @@
+{
+  "as_of": "2026-08-31",
+  "config": {
+    "alpha": 0.001,
+    "min_return_count": 3,
+    "prior_returns": 0.5,
+    "prior_entries": 500.0,
+    "min_baseline_days": 7,
+    "min_entries_for_rate": 30,
+    "return_window_days": 14,
+    "volume_drop_ratio": 0.4,
+    "min_baseline_entries": 40.0,
+    "duplicate_ratio_threshold": 0.2,
+    "settlement_lag_delta_days": 1.0
+  },
+  "anomaly_count": 19,
+  "clusters": [
+    {
+      "cluster_id": "ORIG0004:2026-08-07",
+      "company_id": "ORIG0004",
+      "start_date": "2026-08-07",
+      "end_date": "2026-08-07",
+      "signals": {
+        "volume_drop": 1
+      },
+      "dominant_signal": "volume_drop",
+      "anomalies": [
+        {
+          "company_id": "ORIG0004",
+          "day": "2026-08-07",
+          "signal": "volume_drop",
+          "observed": 19.0,
+          "baseline": 191.07142857142858,
+          "score": 0.0994392523364486,
+          "detail": "19 entries vs baseline 191 (10%)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0005:2026-08-10",
+      "company_id": "ORIG0005",
+      "start_date": "2026-08-10",
+      "end_date": "2026-08-12",
+      "signals": {
+        "nsf_rate": 3
+      },
+      "dominant_signal": "nsf_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0005",
+          "day": "2026-08-10",
+          "signal": "nsf_rate",
+          "observed": 0.0603448275862069,
+          "baseline": 0.01265634306134604,
+          "score": 5.573370106808141,
+          "detail": "14 returns on 232 entries (6.03%) vs baseline 1.27% (expected 2.9; p=2.7e-06)"
+        },
+        {
+          "company_id": "ORIG0005",
+          "day": "2026-08-11",
+          "signal": "nsf_rate",
+          "observed": 0.08968609865470852,
+          "baseline": 0.015726043503821282,
+          "score": 8.932079950650909,
+          "detail": "20 returns on 223 entries (8.97%) vs baseline 1.57% (expected 3.5; p=1.2e-09)"
+        },
+        {
+          "company_id": "ORIG0005",
+          "day": "2026-08-12",
+          "signal": "nsf_rate",
+          "observed": 0.06372549019607843,
+          "baseline": 0.019476657746060066,
+          "score": 3.5900641283753467,
+          "detail": "13 returns on 204 entries (6.37%) vs baseline 1.95% (expected 4.0; p=2.6e-04)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0006:2026-08-06",
+      "company_id": "ORIG0006",
+      "start_date": "2026-08-06",
+      "end_date": "2026-08-06",
+      "signals": {
+        "duplicate_ratio": 1
+      },
+      "dominant_signal": "duplicate_ratio",
+      "anomalies": [
+        {
+          "company_id": "ORIG0006",
+          "day": "2026-08-06",
+          "signal": "duplicate_ratio",
+          "observed": 1.0,
+          "baseline": 0.0,
+          "score": 1.0,
+          "detail": "100% of entries are duplicate submissions (2 files)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0007:2026-08-10",
+      "company_id": "ORIG0007",
+      "start_date": "2026-08-10",
+      "end_date": "2026-08-11",
+      "signals": {
+        "settlement_lag": 2
+      },
+      "dominant_signal": "settlement_lag",
+      "anomalies": [
+        {
+          "company_id": "ORIG0007",
+          "day": "2026-08-10",
+          "signal": "settlement_lag",
+          "observed": 3.0,
+          "baseline": 1.0,
+          "score": 2.0,
+          "detail": "avg settlement lag 3.0 banking days vs baseline 1.0"
+        },
+        {
+          "company_id": "ORIG0007",
+          "day": "2026-08-11",
+          "signal": "settlement_lag",
+          "observed": 3.0,
+          "baseline": 1.1428571428571428,
+          "score": 1.8571428571428572,
+          "detail": "avg settlement lag 3.0 banking days vs baseline 1.1"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0008:2026-07-22",
+      "company_id": "ORIG0008",
+      "start_date": "2026-07-22",
+      "end_date": "2026-07-24",
+      "signals": {
+        "admin_rate": 2
+      },
+      "dominant_signal": "admin_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0008",
+          "day": "2026-07-22",
+          "signal": "admin_rate",
+          "observed": 0.05555555555555555,
+          "baseline": 0.005399568034557235,
+          "score": 3.1556224967554924,
+          "detail": "4 returns on 72 entries (5.56%) vs baseline 0.54% (expected 0.4; p=7.0e-04)"
+        },
+        {
+          "company_id": "ORIG0008",
+          "day": "2026-07-24",
+          "signal": "admin_rate",
+          "observed": 0.06097560975609756,
+          "baseline": 0.006690140845070422,
+          "score": 3.58014064841763,
+          "detail": "5 returns on 82 entries (6.10%) vs baseline 0.67% (expected 0.5; p=2.6e-04)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0012:2026-07-24",
+      "company_id": "ORIG0012",
+      "start_date": "2026-07-24",
+      "end_date": "2026-07-24",
+      "signals": {
+        "unauthorized_rate": 1
+      },
+      "dominant_signal": "unauthorized_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0012",
+          "day": "2026-07-24",
+          "signal": "unauthorized_rate",
+          "observed": 0.022058823529411766,
+          "baseline": 0.0005716463414634146,
+          "score": 4.131425621079946,
+          "detail": "3 returns on 136 entries (2.21%) vs baseline 0.06% (expected 0.1; p=7.4e-05)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0016:2026-07-30",
+      "company_id": "ORIG0016",
+      "start_date": "2026-07-30",
+      "end_date": "2026-07-31",
+      "signals": {
+        "volume_drop": 2
+      },
+      "dominant_signal": "volume_drop",
+      "anomalies": [
+        {
+          "company_id": "ORIG0016",
+          "day": "2026-07-30",
+          "signal": "volume_drop",
+          "observed": 4.0,
+          "baseline": 79.71428571428571,
+          "score": 0.05017921146953405,
+          "detail": "4 entries vs baseline 80 (5%)"
+        },
+        {
+          "company_id": "ORIG0016",
+          "day": "2026-07-31",
+          "signal": "volume_drop",
+          "observed": 5.0,
+          "baseline": 73.28571428571429,
+          "score": 0.0682261208576998,
+          "detail": "5 entries vs baseline 73 (7%)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0017:2026-07-28",
+      "company_id": "ORIG0017",
+      "start_date": "2026-07-28",
+      "end_date": "2026-07-29",
+      "signals": {
+        "unauthorized_rate": 2
+      },
+      "dominant_signal": "unauthorized_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0017",
+          "day": "2026-07-28",
+          "signal": "unauthorized_rate",
+          "observed": 0.04054054054054054,
+          "baseline": 0.001152073732718894,
+          "score": 14.46322807635673,
+          "detail": "12 returns on 296 entries (4.05%) vs baseline 0.12% (expected 0.3; p=3.4e-15)"
+        },
+        {
+          "company_id": "ORIG0017",
+          "day": "2026-07-29",
+          "signal": "unauthorized_rate",
+          "observed": 0.025889967637540454,
+          "baseline": 0.0036261914629092417,
+          "score": 4.639960118605639,
+          "detail": "8 returns on 309 entries (2.59%) vs baseline 0.36% (expected 1.1; p=2.3e-05)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0020:2026-08-06",
+      "company_id": "ORIG0020",
+      "start_date": "2026-08-06",
+      "end_date": "2026-08-06",
+      "signals": {
+        "unauthorized_rate": 1
+      },
+      "dominant_signal": "unauthorized_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0020",
+          "day": "2026-08-06",
+          "signal": "unauthorized_rate",
+          "observed": 0.034482758620689655,
+          "baseline": 0.0009667440061871616,
+          "score": 6.39643053751418,
+          "detail": "5 returns on 145 entries (3.45%) vs baseline 0.10% (expected 0.1; p=4.0e-07)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0023:2026-07-29",
+      "company_id": "ORIG0023",
+      "start_date": "2026-07-29",
+      "end_date": "2026-07-31",
+      "signals": {
+        "nsf_rate": 3
+      },
+      "dominant_signal": "nsf_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0023",
+          "day": "2026-07-29",
+          "signal": "nsf_rate",
+          "observed": 0.06944444444444445,
+          "baseline": 0.01813346228239845,
+          "score": 3.4108406612858158,
+          "detail": "10 returns on 144 entries (6.94%) vs baseline 1.81% (expected 2.6; p=3.9e-04)"
+        },
+        {
+          "company_id": "ORIG0023",
+          "day": "2026-07-30",
+          "signal": "nsf_rate",
+          "observed": 0.08256880733944955,
+          "baseline": 0.021853986551392892,
+          "score": 3.0869675552803857,
+          "detail": "9 returns on 109 entries (8.26%) vs baseline 2.19% (expected 2.4; p=8.2e-04)"
+        },
+        {
+          "company_id": "ORIG0023",
+          "day": "2026-07-31",
+          "signal": "nsf_rate",
+          "observed": 0.13636363636363635,
+          "baseline": 0.025362318840579712,
+          "score": 7.731323206623734,
+          "detail": "18 returns on 132 entries (13.64%) vs baseline 2.54% (expected 3.3; p=1.9e-08)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ORIG0024:2026-08-17",
+      "company_id": "ORIG0024",
+      "start_date": "2026-08-17",
+      "end_date": "2026-08-17",
+      "signals": {
+        "nsf_rate": 1
+      },
+      "dominant_signal": "nsf_rate",
+      "anomalies": [
+        {
+          "company_id": "ORIG0024",
+          "day": "2026-08-17",
+          "signal": "nsf_rate",
+          "observed": 0.09243697478991597,
+          "baseline": 0.02694018783984182,
+          "score": 3.297006294122039,
+          "detail": "11 returns on 119 entries (9.24%) vs baseline 2.69% (expected 3.2; p=5.0e-04)"
+        }
+      ]
+    }
+  ]
+}
